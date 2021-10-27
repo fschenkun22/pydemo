@@ -1,6 +1,7 @@
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
+import dbcon
  
 data = {'code':'200'}
 host = ('0.0.0.0', 8888)
@@ -23,7 +24,19 @@ class Resquest(BaseHTTPRequestHandler):
             data['code']='200'
             data['detail']='success'
             # 发送数据库请求数据，数据库错误应随时中断返回错误数据
-            self.wfile.write(json.dumps(data).encode())
+            ref_data = dbcon.read_contract_num(content)
+
+            # 判断查询状态是否成功，成功返回数据，失败返回错误原因
+            print('查询数据结果：',ref_data)
+            if ref_data[0] == True:
+                # print('数据返回成功d:',ref_data[2])
+                data['result']=ref_data[2]
+                self.wfile.write(json.dumps(data).encode())
+            else:
+                data['code'] = '500'
+                data['detail'] = ref_data[1]
+                data['result'] = ref_data[2]
+                self.wfile.write(json.dumps(data).encode())
 
         else:
             print('command error')
@@ -41,7 +54,7 @@ class Resquest(BaseHTTPRequestHandler):
  
 if __name__ == '__main__':
     server = HTTPServer(host, Resquest)
-    print('DASHU_ERP:请不要关闭此窗口🚀',host)3
+    print('DASHU_ERP:请不要关闭此窗口🚀',host)
 
 
     server.serve_forever()
