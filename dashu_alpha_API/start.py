@@ -33,7 +33,7 @@ class Resquest(BaseHTTPRequestHandler):
             data['code']='200'
             data['detail']='success'
             # 发送数据库请求数据，数据库错误应随时中断返回错误数据
-            ref_data = handle_contract_dbcon.read_contract_num(content)
+            ref_data = handle_contract_dbcon.read_contract_all(content)
 
             # 判断查询状态是否成功，成功返回数据，失败返回错误原因
             print('查询数据结果：',ref_data)
