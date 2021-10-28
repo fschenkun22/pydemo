@@ -1,7 +1,7 @@
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
-import dbcon
+import handle_contract_dbcon
  
 data = {'code':'200'}
 host = ('0.0.0.0', 8888)
@@ -18,19 +18,29 @@ class Resquest(BaseHTTPRequestHandler):
         content = self.path[5:]
         print('command:',command) 
         print('content:',content)
+        if content == "":
+            content = 'nodata'
 
+
+    # 获取到命令，开始下一步处理#################
+    ##########################################
+
+    
+
+    ###################command get#######################################################################
         if command == '/get/':
             print('command:',command)
             data['code']='200'
             data['detail']='success'
             # 发送数据库请求数据，数据库错误应随时中断返回错误数据
-            ref_data = dbcon.read_contract_num(content)
+            ref_data = handle_contract_dbcon.read_contract_num(content)
 
             # 判断查询状态是否成功，成功返回数据，失败返回错误原因
             print('查询数据结果：',ref_data)
             if ref_data[0] == True:
-                # print('数据返回成功d:',ref_data[2])
+                # print('数据返回成功d:',ref_data[2])到这数据已经成功获取
                 data['result']=ref_data[2]
+                # 根据alpha jobID 开始读取订单详细信息（这里虽然已经成功获取但也应该加错误处理！）
                 self.wfile.write(json.dumps(data).encode())
             else:
                 data['code'] = '500'
@@ -38,10 +48,18 @@ class Resquest(BaseHTTPRequestHandler):
                 data['result'] = ref_data[2]
                 self.wfile.write(json.dumps(data).encode())
 
+        ###########/command test#######################################################
+        elif command == '/test':
+            print('This is a test,recived command:',command)
+            data['code']='200'
+            data['detail']='Test success!'
+            self.wfile.write(json.dumps(data).encode())
+
+        ###########/unknow command###########################################################
         else:
-            print('command error')
+            print('Unknow command or command error!')
             data['code']='500'
-            data['detail']='command error'
+            data['detail']='Unknow command or command error!'
             self.wfile.write(json.dumps(data).encode())
             
         # 如果监测有错误返回命令不能识别,请重试
