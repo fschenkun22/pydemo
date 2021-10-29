@@ -1,12 +1,20 @@
 
+import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
-import handle_contract_dbcon
- 
+
+# from common_fn import read_contract_num_detail as readContractNumDetail
+
+
+sys.path.append("./common/")
+from common.read_full_contract_num import get_full
 data = {'code':'200'}
 host = ('0.0.0.0', 8888)
  
 class Resquest(BaseHTTPRequestHandler):
+
+
+    
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
@@ -33,7 +41,7 @@ class Resquest(BaseHTTPRequestHandler):
             data['code']='200'
             data['detail']='success'
             # 发送数据库请求数据，数据库错误应随时中断返回错误数据
-            ref_data = handle_contract_dbcon.read_contract_all(content)
+            ref_data = get_full(content)
 
             # 判断查询状态是否成功，成功返回数据，失败返回错误原因
             print('查询数据结果：',ref_data)
@@ -71,6 +79,7 @@ class Resquest(BaseHTTPRequestHandler):
 
  
 if __name__ == '__main__':
+    print(sys.path)
     server = HTTPServer(host, Resquest)
     print('DASHU_ERP:请不要关闭此窗口🚀',host)
 
