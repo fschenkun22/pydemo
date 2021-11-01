@@ -49,6 +49,7 @@ class Resquest(BaseHTTPRequestHandler):
                 # print('数据返回成功d:',ref_data[2])到这数据已经成功获取
                 data['result']=ref_data[2]
                 # 根据alpha jobID 开始读取订单详细信息（这里虽然已经成功获取但也应该加错误处理！）
+                print('bug:',data)
                 self.wfile.write(json.dumps(data).encode())
             else:
                 data['code'] = '500'

@@ -28,30 +28,20 @@ def get_full(contract_num):
             ## 到这 说明拿到结果对了
             # data['part'] = JobList[2] ##所有部件存在part里
             # print('结果正确下一步根据数据列表循返回出数据 看下jobList内容：',JobList[2])
-            data['part'] = format_job_list_dict(JobList[2])
-
-
+            data['part'] = JobList[2]
             
         else:
             status = False
             msg = JobList[1]
             data = {}
-
         return status,msg,data
+
+    ## 读取合同失败处理    
     else:
         status = contract_detail[0]
         msg = contract_detail[1]
         return status,msg,{}
     
-
-def format_job_list_dict(dat):
-    tmp = {}
-    print('data is',dat)
-    for k,v in dat:
-        print(k,v)
-        ## 在这拿JPID 去查工件
-    return tmp
-
 
 
 if __name__ == "__main__":

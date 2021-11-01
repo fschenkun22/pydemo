@@ -5,6 +5,7 @@
 # JobID 是通过合同号查出来的唯一ID
 # 查询结果是所有产品（也就是有多少柜）
 from init_connect import *
+from read_jobPanels import *
 
 def read_job_products_list_by_JobID(JobID):
     #### 通过jobID 查询jobProducts中有几个柜子，并列出柜子大小 4928
@@ -38,12 +39,21 @@ def read_job_products_list_by_JobID(JobID):
 
 def format_row(row):
     tmp = {}
+    cont = 0
+    ltmp = {}
     for item in row:
-        tmp[item[0]] = item[1]
-    # print ('format :',tmp)
+        for i in item:
+            ltmp['JPID'] = item[0]
+            ltmp['width'] = float(item[2]) 
+            ltmp['height'] = float(item[3]) 
+            ltmp['panels'] = read_job_panels_by_JPID(str(item[0]))
+        cont+=1  
+        tmp[cont] = ltmp
+    cont = 0
+    ltmp = ''
     return tmp
 
-    
+
 if __name__ == '__main__':
     data = read_job_products_list_by_JobID('4928')
     print(data)
