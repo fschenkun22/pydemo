@@ -7,33 +7,27 @@ def format_panels(row):
     tmp = {}
     cont = 0
     ltmp = {}
+
     for item in row:
-        print('bug',type(item),item)
-        
-        for i in item:
-            ltmp['ID'] = item[0]
-            cont +=1
-        tmp[cont] = ltmp
-        cont =0
-        ltmp=''
+       
+        # print(cont,'返回的id数据',item[0])
+        tmp[cont] = get_by_JPID(item[0],row,cont)
+        cont+=1
+   
     return tmp
 
-    # tmp = {}
-    # cont = 0
-    # ltmp = {}
-    # for item in row:
-    #     for i in item:
-    #         ltmp['JPID'] = item[0]
-    #         ltmp['width'] = float(item[2]) 
-    #         ltmp['height'] = float(item[3]) 
-    #         ltmp['panels'] = read_job_panels_by_JPID(str(item[0]))
-    #     cont+=1  
-    #     tmp[cont] = ltmp
-    # cont = 0
-    # ltmp = ''
-    # return tmp
+def get_by_JPID(JPID,row,cont):
+    tmp={}
+    # print('bug...',row[cont])
+    # print('bug2...',row[cont][0])
+    # print('bug3...',row[cont][1])
+    # print('bug4...',row[cont][2])
+    tmp['id'] = row[cont][0]
+    tmp['JPID'] = row[cont][1]
+    tmp['PanleName2']=row[cont][2].encode('latin-1').decode('gbk')
+    return tmp
 
-    return tmp1
+
 
 def read_job_panels_by_JPID(JPID):
     if JPID == '':
@@ -55,7 +49,7 @@ def read_job_panels_by_JPID(JPID):
             cursor.close()   
             connect.close()
             status = True
-            msg = 'Success panels read done = '+ JPID
+            msg = 'Success panels read done JPID is = '+ JPID
             data = format_panels(row)
             return status,msg,data
     except TypeError:
