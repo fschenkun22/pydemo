@@ -41,12 +41,19 @@ def format_row(row):
     tmp = {}
     cont = 0
     ltmp = {}
+    panlestmp = {}
     for item in row:
         for i in item:
             ltmp['JPID'] = item[0]
             ltmp['width'] = float(item[2]) 
             ltmp['height'] = float(item[3]) 
-            ltmp['panels'] = read_job_panels_by_JPID(str(item[0]))
+            data = read_job_panels_by_JPID(str(item[0])) ### bug 不知道为啥变成数组了
+            print('bug data is ',data)
+            panlestmp['status'] = data[0]
+            panlestmp['msg']=data[1]
+            panlestmp['data']=data[2]
+            ltmp['panels']=panlestmp
+
         cont+=1  
         tmp[cont] = ltmp
     cont = 0

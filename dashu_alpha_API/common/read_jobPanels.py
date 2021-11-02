@@ -13,7 +13,7 @@ def format_panels(row):
         # print(cont,'返回的id数据',item[0])
         tmp[cont] = get_by_JPID(item[0],row,cont)
         cont+=1
-   
+    print('bug...tmp is ',tmp)
     return tmp
 
 def get_by_JPID(JPID,row,cont):
@@ -33,7 +33,7 @@ def read_job_panels_by_JPID(JPID):
     if JPID == '':
         status = False
         msg = "Error step read_jobPanels,Unable to read JPID == '' "
-        return status,msg,[]
+        return status,msg,{}
     try:
         connect = conn()
         if connect:
@@ -51,18 +51,20 @@ def read_job_panels_by_JPID(JPID):
             status = True
             msg = 'Success panels read done JPID is = '+ JPID
             data = format_panels(row)
+
+            # print('bug data type is ',data)
             return status,msg,data
     except TypeError:
         # print('捕获到类型写入错误 可能数据读混乱了')
-        raise
+
         status = False
         msg = "Error step read_jobPanels ,The data has been read from the alpha database,but it's empty or format error"
-        return status,msg,[]
+        return status,msg,{}
     except:
-        raise
+
         status = False
         msg = "Unable to connect to the alpha server,read_jobPanels, please try again later or check the database settings file"
-        return status,msg,[]
+        return status,msg,{}
 
 if __name__ == '__main__':
         data = read_job_panels_by_JPID('24305')
