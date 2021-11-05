@@ -6,12 +6,12 @@ import read_contract_num_detail
 
 
 def get_full(contract_num):
-    ## 第一步 读合同号内容 装数据库里
+    ##  读合同号内容
     status = False
     msg = 'read_contract_num_detail => get_full defalt out put'
     data = {}
+    ## 调用读取函数
     contract_detail = read_contract_num_detail.read_contract_num_detail(contract_num)
-
     if contract_detail[0] == True:
         ## 成功获取合同信息
         status = contract_detail[0]
