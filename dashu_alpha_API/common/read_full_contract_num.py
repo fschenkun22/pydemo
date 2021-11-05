@@ -28,7 +28,7 @@ def get_full(contract_num):
             ## 到这 说明拿到结果对了
             # data['part'] = JobList[2] ##所有部件存在part里
             # print('结果正确下一步根据数据列表循返回出数据 看下jobList内容：',JobList[2])
-            data['part'] = JobList[2]
+            data['parts'] = JobList[2]
             
         else:
             status = False

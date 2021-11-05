@@ -7,8 +7,22 @@ def format_contract_num(row):
     # print('format data:',row)
     tmp_row = {}
     tmp_row['JobID'] = row[0]
-    tmp_row['订单号'] = row[1]
-    tmp_row['合同号'] = row[13]
+    tmp_row['JobNo'] = row[1]
+    tmp_row['JobName'] = row[2]
+    tmp_row['Client'] = row[3]
+    tmp_row['OrderDate'] = row[4].strftime("%Y-%m-%d %H:%M:%S")
+    tmp_row['Address'] = row[5]
+    tmp_row['LinkMan'] = row[6]
+    # tmp_row['DueDate'] = row[7].strftime("%Y-%m-%d %H:%M:%S")
+    tmp_row['Memo'] = row[8]
+    tmp_row['Tel'] = row[12]
+    tmp_row['IsLock'] = row[13]
+    tmp_row['State'] = row[18]
+    tmp_row['Barcode'] = row[34]
+
+
+
+
     # print (tmp_row)
     return tmp_row
 
@@ -46,5 +60,5 @@ def read_contract_num_detail(contract_num):
         return status,msg,[]
 
 if __name__ == '__main__':
-        data = read_contract_num_detail('20211015-001')
+        data = read_contract_num_detail('20211015-003')
         print('bak:',data)
