@@ -5,9 +5,9 @@
 # JobID 是通过合同号查出来的唯一ID
 # 查询结果是所有产品（也就是有多少柜）
 import copy
-from read_hardware import *
-from init_connect import *
-from read_jobPanels import *
+from common.read_hardware import *
+from common.init_connect import *
+from common.read_jobPanels import *
 
 def read_job_products_list_by_JobID(JobID):
     #### 通过jobID 查询jobProducts中有几个柜子，并列出柜子大小 4928

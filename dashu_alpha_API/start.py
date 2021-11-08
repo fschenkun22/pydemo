@@ -8,6 +8,8 @@ import json
 
 sys.path.append("./common/")
 from common.read_full_contract_num import get_full
+
+
 data = {'code':'200'}
 host = ('127.0.0.1', 65500)
  

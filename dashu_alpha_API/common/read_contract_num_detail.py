@@ -1,7 +1,7 @@
 #####读合同详情
 
 # from .init_connect import *
-from init_connect import *
+from common.init_connect import *
 
 def format_contract_num(row):
     # print('format data:',row)
