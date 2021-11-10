@@ -3,7 +3,9 @@ import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import time
-# from common_fn import read_contract_num_detail as readContractNumDetail
+
+from common.write_contract import write_contract_by
+
 
 
 sys.path.append("./common/")
@@ -72,14 +74,24 @@ class Resquest(BaseHTTPRequestHandler):
 ######################################################################################################################################end do get
 
 
+############PUT functions##################
+
+
+
     def do_PUT(self):
         data_put={}
+        ref_data = {}
         self.headers['content-length']
         content_len = int(self.headers['content-length'])
         post_body = self.rfile.read(content_len)
-        print("data is :",self.path)
-        data_put['codetest']=2001
+        print("command str :",self.path)
 
+        ref_data = write_contract_by(self.path)
+
+
+
+
+        data_put['code']=200
         self.send_response(200)
         self.send_header("Content-type", "application/json;charset=utf-8")
         self.end_headers()
