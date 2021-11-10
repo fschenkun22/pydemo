@@ -16,8 +16,9 @@ def format_contract_num(row):
     # tmp_row['DueDate'] = row[7].strftime("%Y-%m-%d %H:%M:%S")
     tmp_row['Memo'] = row[8]
     tmp_row['Tel'] = row[12]
-    tmp_row['IsLock'] = row[13]
+    tmp_row['IsLock'] = row[14]
     tmp_row['State'] = row[18]
+    tmp_row['Area'] = float(row[29]) 
     tmp_row['Barcode'] = row[34]
 
 

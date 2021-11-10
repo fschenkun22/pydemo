@@ -2,7 +2,7 @@
 import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
-
+import time
 # from common_fn import read_contract_num_detail as readContractNumDetail
 
 
@@ -15,8 +15,6 @@ host = ('127.0.0.1', 65500)
  
 class Resquest(BaseHTTPRequestHandler):
 
-
-    
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
@@ -31,12 +29,8 @@ class Resquest(BaseHTTPRequestHandler):
         if content == "":
             content = 'nodata'
 
-
     # 获取到命令，开始下一步处理#################
     ##########################################
-
-    
-
     ###################command get#######################################################################
         if command == '/get/':
             print('command:',command)
@@ -54,30 +48,42 @@ class Resquest(BaseHTTPRequestHandler):
                 # print('bug:',data)
                 self.wfile.write(json.dumps(data).encode())
             else:
-                data['code'] = '500'
+                data['code'] = '501'
                 data['detail'] = ref_data[1]
                 data['result'] = ref_data[2]
                 self.wfile.write(json.dumps(data).encode())
-
         ###########/command test#######################################################
         elif command == '/test':
             print('This is a test,recived command:',command)
             data['code']='200'
             data['detail']='Test success!'
+            time.sleep(10)
             self.wfile.write(json.dumps(data).encode())
-
         ###########/unknow command###########################################################
         else:
             print('Unknow command or command error!')
             data['code']='500'
             data['detail']='Unknow command or command error!'
+            
             self.wfile.write(json.dumps(data).encode())
             
         # 如果监测有错误返回命令不能识别,请重试
-
         # 命令正确，可以调用数据库查询函数处理，并把结果赋值给result，处理过程中错误把code改成错误代码
+######################################################################################################################################end do get
 
-       
+
+    def do_PUT(self):
+        data_put={}
+        self.headers['content-length']
+        content_len = int(self.headers['content-length'])
+        post_body = self.rfile.read(content_len)
+        print("data is :",self.path)
+        data_put['codetest']=2001
+
+        self.send_response(200)
+        self.send_header("Content-type", "application/json;charset=utf-8")
+        self.end_headers()
+        self.wfile.write(json.dumps(data_put).encode())
 
 
  
