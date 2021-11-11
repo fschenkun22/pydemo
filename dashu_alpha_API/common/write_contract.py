@@ -1,13 +1,30 @@
 from urllib.parse import quote,unquote,urlparse,parse_qs
 
 def format_contract_str(contract_str):
-    data = unquote(contract_str)
-    up = urlparse(data)
-    upp = parse_qs(up.query)
 
-    
-    print('bak:',upp)
-    pass
+    data={} ## 定义返回的数组
+    data['status']=False
+    data['msg']=''
+    data['data']={}
+
+    try:
+        tmpdata = unquote(contract_str)
+        up = urlparse(tmpdata)
+        upp = parse_qs(up.query)
+        # names = ['PactNo','JobNo','JobName','Client','OrderDate','Address','LinkMan','Memo','Tel','GUID','Designer','Calculator','Dealer']
+        print('unpack data:',upp)
+
+        #######检查#######
+        if len(upp['PactNo'][0])<50:
+            print('yes',len(upp['PactNo'][0]))
+        else:
+            data['status'] = False
+            data['msg']='PactNo error'
+            return data
+
+    except:
+        raise
+
 
 
 
@@ -16,7 +33,7 @@ def write_contract_by(contract_str):
 
     ## 把传过来的参数格式化并检测有问题没，有问题返回错误，没问题继续
     # job = format_contract_str(contract_str)
-    return contract_str
+    return format_contract_str(contract_str) 
 
 
     pass
