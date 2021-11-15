@@ -1,1 +1,0 @@
-urllib.unquote(data)

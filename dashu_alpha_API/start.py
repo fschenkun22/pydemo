@@ -75,27 +75,35 @@ class Resquest(BaseHTTPRequestHandler):
 
 
 ############PUT functions##################
-
-
-
     def do_PUT(self):
         data_put={}
         ref_data = {}
         self.headers['content-length']
         content_len = int(self.headers['content-length'])
         post_body = self.rfile.read(content_len)
-        print("command str :",self.path)
-
+        # print("command str :",self.path)
         ref_data = write_contract_by(self.path)
 
+        if ref_data['status'] == True:
+            print('写入通过')
+            data_put['code']=200
+            data_put['status']=True
+            data_put['msg']='write done'
+            self.send_response(200)
+            self.send_header("Content-type", "application/json;charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps(data_put).encode())
 
 
-
-        data_put['code']=200
-        self.send_response(200)
-        self.send_header("Content-type", "application/json;charset=utf-8")
-        self.end_headers()
-        self.wfile.write(json.dumps(data_put).encode())
+        else:
+            print('写入失败')
+            data_put['code']=500
+            data_put['status']=False
+            data_put['msg']=ref_data['msg']
+            self.send_response(200)
+            self.send_header("Content-type", "application/json;charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps(data_put).encode())
 
 
  

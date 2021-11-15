@@ -5,6 +5,7 @@ import re
 import datetime
 import uuid
 
+from init_connect import *
 ## 翻译接单数据
 def format_contract_str(contract_str):
     data={} ## 定义返回的数组
@@ -34,7 +35,7 @@ def format_contract_str(contract_str):
 
         #######检查#######JobNo
         if len(upp['JobNo'][0])<256:
-            print('debug JobNo is',len(upp['JobNo'][0]))
+            # print('debug JobNo len is',len(upp['JobNo'][0]))
             collect_data['JobNo']=upp['JobNo'][0]
         else:
             data['status']=False
@@ -64,7 +65,7 @@ def format_contract_str(contract_str):
         ##################
 
         #######检查#######OrderDate
-        print('debug OrderDate is ',upp['OrderDate'][0])
+        # print('debug OrderDate is ',upp['OrderDate'][0])
         if upp['OrderDate'][0] =='now':
             collect_data['OrderDate'] = datetime.datetime.now()
         else:
@@ -154,6 +155,17 @@ def format_contract_str(contract_str):
             return data
         ##################
 
+        #######检查#######Write_enable ##除传入55aa外 所有信号都忽略不写入
+        if len(upp['Write_enable'][0])<10:
+            collect_data['Write_enable']=upp['Write_enable'][0]
+        else:
+            data['status']=False
+            data['msg']='Write_enable limited in range 10'
+            data['data']={}
+            return data
+        ##################
+
+
         data['data'] = collect_data ## 写入要返回数据
         data['status'] = True
         data['msg'] = 'success ,All checked pass'
@@ -161,23 +173,52 @@ def format_contract_str(contract_str):
 
 
     except:
-        raise
+        data['data']=''
+        data['status']=False
+        data['msg']='error when format contract str'
+        return data
     ## here are some unkown errors
-
-
-
 
 
 def write_contract_by(contract_str):
 
+    data={}
+
     ## 把传过来的参数格式化并检测有问题没，有问题返回错误，没问题继续
-    # job = format_contract_str(contract_str)
-    return format_contract_str(contract_str) 
+
+    ref_data = format_contract_str(contract_str)
+    ### 格式化数据后开始正式写入
+    if ref_data['status'] == True:
+        print('通过检测')
+        try:
+            connect = conn()
+            if connect:
+                cursor = connect.cursor()
+                # sql="select * from Wrk_Jobs"
+                # cursor.execute(sql)
+                # print(cursor.fetchone())
+
+                print('debug ref_data is :',ref_data['data'])
+                cursor.close()
+                connect.close()
+
+                data['status'] = True
+                data['msg'] = 'write done'
+                return data
+        except:
+                data['status'] = False
+                data['msg'] = 'connect database error'
+                return data
+
+    else:
+        print('不通过')
+        data['status'] = False
+        data['msg'] = 'checked format error, write failed'
+        return data
 
 
-    pass
 
 
 if __name__ == '__main__':
-        data = write_contract_by('/?PactNo=211112-001-1-1&JobNo=20211110%E5%8D%95%E5%8F%B7%E6%B5%8B%E8%AF%95&JobName=%E8%AE%A2%E5%8D%95%E5%90%8D%E7%A7%B0%E6%B5%8B%E8%AF%95&Client=%E5%AE%A2%E6%88%B7%E5%90%8D%E7%A7%B0%E6%B5%8B%E8%AF%95&OrderDate=now&Address=%E5%AE%89%E8%A3%85%E5%9C%B0%E5%9D%80%E6%B5%8B%E8%AF%95&LinkMan=%E8%81%94%E7%B3%BB%E4%BA%BA%E6%B5%8B%E8%AF%95&Memo=%E5%A4%87%E6%B3%A8%E6%B5%8B%E8%AF%95&Tel=15641366461&GUID=random&Designer=%E8%AE%BE%E8%AE%A1%E5%B8%88%E6%B5%8B%E8%AF%95&Calculator=%E6%8B%86%E5%8D%951&Dealer=%E4%BB%A3%E7%90%86%E5%95%86%E5%90%8D%E6%B5%8B%E8%AF%95')
+        data = write_contract_by('/?PactNo=B211115-001WB-1-1&JobNo=20211110%E5%8D%95%E5%8F%B7%E6%B5%8B%E8%AF%95&JobName=%E8%AE%A2%E5%8D%95%E5%90%8D%E7%A7%B0%E6%B5%8B%E8%AF%95&Client=%E5%AE%A2%E6%88%B7%E5%90%8D%E7%A7%B0%E6%B5%8B%E8%AF%95&OrderDate=now&Address=%E5%AE%89%E8%A3%85%E5%9C%B0%E5%9D%80%E6%B5%8B%E8%AF%95&LinkMan=%E8%81%94%E7%B3%BB%E4%BA%BA%E6%B5%8B%E8%AF%95&Memo=%E5%A4%87%E6%B3%A8%E6%B5%8B%E8%AF%95&Tel=15641366461&GUID=random&Designer=%E8%AE%BE%E8%AE%A1%E5%B8%88%E6%B5%8B%E8%AF%95&Calculator=%E6%8B%86%E5%8D%951&Dealer=%E4%BB%A3%E7%90%86%E5%95%86%E5%90%8D%E6%B5%8B%E8%AF%95&Write_enable=test')
         print('maindata is',data)

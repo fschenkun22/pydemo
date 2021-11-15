@@ -2,6 +2,7 @@ import common.read_jobProducts_list
 import common.read_hardware
 import common.init_connect
 import common.read_jobPanels
+import common.write_contract
 from pymssql import _mssql
 from pymssql import _pymssql
 import uuid
