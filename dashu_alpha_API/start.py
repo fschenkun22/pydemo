@@ -104,6 +104,7 @@ class Resquest(BaseHTTPRequestHandler):
             self.send_header("Content-type", "application/json;charset=utf-8")
             self.end_headers()
             self.wfile.write(json.dumps(data_put).encode())
+            
 
 
  
