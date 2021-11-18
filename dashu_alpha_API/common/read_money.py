@@ -25,7 +25,7 @@ def format_row_money(item):
     tmp['Category']=item[6].encode('latin-1').decode('gbk')
     tmp['Name']=item[7]
     tmp['Qty']=float(item[8]) 
-    print(item[9])
+    # print(item[9])
     if item[9]:
         tmp['Price']=float(item[9])
     else:
