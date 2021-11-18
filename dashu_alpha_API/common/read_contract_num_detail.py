@@ -2,6 +2,7 @@
 
 # from .init_connect import *
 from common.init_connect import *
+# from init_connect import *
 
 def format_contract_num(row):
     # print('format data:',row)
@@ -43,15 +44,21 @@ def read_contract_num_detail(contract_num):
             # exit()
             cursor.execute(sql)
             row = cursor.fetchone()
-            # print(row)
+            # print('row is',row)
             cursor.close()   
             connect.close()
+            if row == None:
+                status = False
+                msg = 'No Data'
+                data = {}
+                return status,msg,data
             status = True
             msg = 'Success contract_num_detail = '+contract_num
             rfrow = format_contract_num(row)
             return status,msg,rfrow
     except TypeError:
         # print('捕获到类型写入错误 可能数据读混乱了')
+        # raise
         status = False
         msg = "Error step read_contract_num ,The data has been read from the alpha database,but it's empty or format error"
         return status,msg,[]

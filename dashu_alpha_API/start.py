@@ -1,12 +1,10 @@
 
 import sys
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import HTTPServer, BaseHTTPRequestHandler, SimpleHTTPRequestHandler
 import json
 import time
 
 from common.write_contract import write_contract_by
-
-
 
 sys.path.append("./common/")
 from common.read_full_contract_num import get_full
@@ -72,7 +70,9 @@ class Resquest(BaseHTTPRequestHandler):
         # 如果监测有错误返回命令不能识别,请重试
         # 命令正确，可以调用数据库查询函数处理，并把结果赋值给result，处理过程中错误把code改成错误代码
 ######################################################################################################################################end do get
-
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        SimpleHTTPRequestHandler.end_headers(self)
 
 ############PUT functions##################
     def do_PUT(self):

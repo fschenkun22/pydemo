@@ -3,7 +3,8 @@
 # from .init_connect import *
 from common.read_mater_name import read_material_name_by_material
 from common.init_connect import *
-
+# from read_mater_name import read_material_name_by_material
+# from init_connect import *
 
 def format_panels(row):
     tmp = {}

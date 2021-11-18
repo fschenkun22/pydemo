@@ -2,6 +2,7 @@
 
 # from .init_connect import *
 from common.init_connect import *
+# from init_connect import *
 
 def format_hardware(row):
     tmp = {}

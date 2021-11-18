@@ -9,6 +9,10 @@ from common.read_hardware import *
 from common.init_connect import *
 from common.read_jobPanels import *
 
+# from read_hardware import *
+# from init_connect import *
+# from read_jobPanels import *
+
 def read_job_products_list_by_JobID(JobID):
     #### 通过jobID 查询jobProducts中有几个柜子，并列出柜子大小 4928
     # print('收到jobid:',JobID)
@@ -43,13 +47,13 @@ def read_job_products_list_by_JobID(JobID):
         return status,msg,[]
 
 def format_row(row):
-    print('debug1',row)
+    # print('debug1',row)
     tmp = {}
     cont = 0
     ltmp = {}
     panlestmp = {}
     for item in row:
-        print('jpid',item[0])
+        # print('jpid',item[0])
         ltmp['JPID'] = item[0]
         ltmp['ProductName2']=item[1]
         ltmp['Width'] = float(item[2]) 
