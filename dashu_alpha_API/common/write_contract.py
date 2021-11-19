@@ -4,9 +4,9 @@ from urllib.parse import quote,unquote,urlparse,parse_qs
 import re
 import datetime
 import uuid
-
-from common.init_connect import *
-import pprint
+import time
+from init_connect import *
+from read_contract_num_detail import *
 
 ## 翻译接单数据
 def format_contract_str(contract_str):
@@ -30,7 +30,7 @@ def format_contract_str(contract_str):
         else:
             ## 失败中断返回错误内容
             data['status'] = False
-            data['msg']='PactNo not found'
+            data['msg']='PactNo format error,format must be "^\d{6}-\d{3,4}|^B{1}\d{6}-\d{3,4}"'
             data['data']={}
             return data
         ##################
@@ -69,7 +69,7 @@ def format_contract_str(contract_str):
         #######检查#######OrderDate
         # print('debug OrderDate is ',upp['OrderDate'][0])
         if upp['OrderDate'][0] =='now':
-            collect_data['OrderDate'] = datetime.datetime.now()
+            collect_data['OrderDate'] = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
         else:
             data['status']=False
             data['msg']='OrderDate must be now'
@@ -190,79 +190,58 @@ def write_contract_by(contract_str):
 
     ref_data = format_contract_str(contract_str)
     ### 格式化数据后开始正式写入
+    print('ref_data is :',ref_data)
     if ref_data['status'] == True:
-        print('通过检测',ref_data['data'])
-        try:
-            connect = conn()
-            if connect:
-                cursor = connect.cursor()
-                sql='''select * from (
-select A.JPID,A.ID ID,C.ProductName2,A.PanelName2 ItemName,ISNULL(C.FactoryDiscount,1) Discount,1 CateID,'双饰面板' Category,B.MaterName Name,SUM(A.Length*A.Width*A.Qty/1000000) Qty,A.Price,A.Length Length,A.Width Width                                                                                                           
-from Wrk_JobPanels A left join Bas_Material B on A.Material=B.MaterID
-  left join Wrk_JobProducts C on A.JPID=C.JPID
-   left join bas_panels e on A.panelID=e.panelID
-where A.JobID=4928 and  charindex('不报价', isnull(e.description,''))=0                                    
-group by A.JPID,C.ProductName2,A.PanelName2,ISNULL(C.FactoryDiscount,1),A.Material,B.MaterName,A.Price ,A.Length,A.Width,A.Qty,A.ID           
-union all
-select A.JPID,1 ID,C.ProductName2,'异形'  ItemName,1 Discount,2 CateID,'异形' Category,'异形板件' Name,SUM(A.Qty) Qty,10 Price,1 Length,1 Width                                 
-from Wrk_JobPanels A left join Wrk_JobProducts C on A.JPID=C.JPID 
-   left join bas_panels e on A.panelID=e.panelID  
-where A.JobID=4928 and CHARINDEX('异形',A.Memo)>0       and    charindex('异形不算', isnull(e.description,''))=0       
-group by A.JPID,C.ProductName2
-union all    
-select A.JPID,'' ID,C.ProductName2,A.Unit ItemName,1 Discount,2 CateID,'五金' Category,
-	ISNULL(A.WJName2,A.WJName) Name,SUM(case when B.Type=3 then case when isnull(a.unit,'')='根' then A.Qty else ISNULL(A.Length/1000*A.Qty,0)  end else a.qty end) Qty ,   
-	CASE WHEN A.WJName2 IS NOT NULL THEN B.Price ELSE 0 END Price,1 Length,1 Width 
-from Wrk_JobHardware A left join Bas_Hardware B on A.WJID=B.WJID
-  left join Wrk_JobProducts C on A.JPID=C.JPID
-where B.PriceType>0 and A.JobID=4928  and  charindex('不报价', isnull(b.description,''))=0                                               
-group by A.JPID,C.ProductName2,A.Unit,ISNULL(A.WJName2,A.WJName),
-	CASE WHEN A.WJName2 IS NOT NULL THEN B.Price ELSE 0 END
-union all
-select A.JPID,'' ID,C.ProductName2,'' ItemName,ISNULL(C.FactoryDiscount,1) Discount,3 CateID,'封边材料' Category,
-	A.EdgeName Name,SUM(Length)/1000 Qty,B.Price,1 Length,1 Width                                                  
-from
-(select JPID,EBL1 EdgeName,(Length+20)*Qty Length from Wrk_JobPanels where JobID=4928 and EBL1<>''
-union all
-select JPID,EBL2 EdgeName,(Length+20)*Qty Length from Wrk_JobPanels where JobID=4928 and EBL2<>''
-union all
-select JPID,EBW1 EdgeName,(Width+20)*Qty Length from Wrk_JobPanels where JobID=4928 and EBW1<>''
-union all
-select JPID,EBW2 EdgeName,(Width+20)*Qty Length from Wrk_JobPanels where JobID=4928 and EBW2<>''
-) A left join Bas_EdgeBanding B on A.EdgeName=B.EdgeName
-  left join Wrk_JobProducts C on A.JPID=C.JPID
-group by A.JPID,C.ProductName2,ISNULL(C.FactoryDiscount,1),A.EdgeName,B.Price   
-                     
-) A order by JPID,CateID'''
-                cursor.execute(sql)
+        print('通过检测:',ref_data['data']['PactNo'])
+        ## 能到达这说明基本格式没有问题，拿合同号去查合同号是否存在
+        pre_data = ref_data['data']
+        contract_num = read_contract_num_detail(ref_data['data']['PactNo'])
+        print('查询合同号结果:',contract_num)
+        if contract_num[0] == False:
+            print('没有检测到该合同任何数据，可以下单了')
+            try:
+                connect = conn()
+                if connect:
+                    cursor = connect.cursor()
 
-                index = cursor.description
-                tem1 = cursor.fetchone()
-                print('debug:!11:',tem1)
-                print('debug:!22:',index)
+                    print('ref：', ref_data)
+                    sql='insert into Wrk_Jobs(JobNo,JobName,Client,OrderDate,Address,LinkMan,Memo,Tel,PactNo,IsLock,State,GUID,Designer,Calculator,Dealer)values('+"'"+pre_data['JobNo']+"'"+','+"'"+pre_data['JobName']+"'"+','+"'"+pre_data['Client']+"'"+','+"'"+pre_data['OrderDate']+"'"+','+"'"+pre_data['Address']+"'"+','+"'"+pre_data['LinkMan']+"'"+','+"'"+pre_data['Memo']+"'"+','+"'"+pre_data['Tel']+"'"+','+"'"+pre_data['PactNo']+"'"+','+'0'+','+'0'+','+"'"+pre_data['GUID']+"'"+','+"'"+pre_data['Designer']+"'"+','+"'"+pre_data['Calculator']+"'"+','+"'"+pre_data['Dealer']+"'"+')'
+                    
+                    print('sql is',sql)
+                    cursor.execute(sql)
+                    connect.commit()
+                    cursor.close()
+                    connect.close()
 
-                # print('debug ref_data is :',ref_data['data'])
-                # print('sql is',sql)
-                cursor.close()
-                connect.close()
+                    data['status'] = True
+                    data['msg'] = 'write done'
+                    return data
+            except:
+                    raise
+                    data['status'] = False
+                    data['msg'] = 'connect database error'
+                    return data
 
-                data['status'] = True
-                data['msg'] = 'write done'
-                return data
-        except:
-                data['status'] = False
-                data['msg'] = 'connect database error'
-                return data
+
+
+
+        else:
+            print('不能下单 ，找到一个相同合同号的信息：',contract_num[2])
+            data['status'] = False
+            data['msg']='this contract allrady exsist ,',contract_num[2]
+            return data
+
+
 
     else:
-        print('不通过')
+        print('不通过直接报错')
         data['status'] = False
-        data['msg'] = 'checked format error, write failed'
+        data['msg'] = 'checked format error, write failed,'+ref_data['msg']
         return data
 
 
 
 
 if __name__ == '__main__':
-        data = write_contract_by('/?PactNo=B211115-001WB-1-1&JobNo=20211110%E5%8D%95%E5%8F%B7%E6%B5%8B%E8%AF%95&JobName=%E8%AE%A2%E5%8D%95%E5%90%8D%E7%A7%B0%E6%B5%8B%E8%AF%95&Client=%E5%AE%A2%E6%88%B7%E5%90%8D%E7%A7%B0%E6%B5%8B%E8%AF%95&OrderDate=now&Address=%E5%AE%89%E8%A3%85%E5%9C%B0%E5%9D%80%E6%B5%8B%E8%AF%95&LinkMan=%E8%81%94%E7%B3%BB%E4%BA%BA%E6%B5%8B%E8%AF%95&Memo=%E5%A4%87%E6%B3%A8%E6%B5%8B%E8%AF%95&Tel=15641366461&GUID=random&Designer=%E8%AE%BE%E8%AE%A1%E5%B8%88%E6%B5%8B%E8%AF%95&Calculator=%E6%8B%86%E5%8D%951&Dealer=%E4%BB%A3%E7%90%86%E5%95%86%E5%90%8D%E6%B5%8B%E8%AF%95&Write_enable=test')
+        data = write_contract_by('/?PactNo=111119-001-1&JobNo=20211110%E5%8D%95%E5%8F%B7%E6%B5%8B%E8%AF%95&JobName=%E8%AE%A2%E5%8D%95%E5%90%8D%E7%A7%B0%E6%B5%8B%E8%AF%95&Client=%E5%AE%A2%E6%88%B7%E5%90%8D%E7%A7%B0%E6%B5%8B%E8%AF%95&OrderDate=now&Address=%E5%AE%89%E8%A3%85%E5%9C%B0%E5%9D%80%E6%B5%8B%E8%AF%95&LinkMan=%E8%81%94%E7%B3%BB%E4%BA%BA%E6%B5%8B%E8%AF%95&Memo=%E5%A4%87%E6%B3%A8%E6%B5%8B%E8%AF%95&Tel=15641366461&GUID=random&Designer=%E8%AE%BE%E8%AE%A1%E5%B8%88%E6%B5%8B%E8%AF%95&Calculator=%E6%8B%86%E5%8D%951&Dealer=%E4%BB%A3%E7%90%86%E5%95%86%E5%90%8D%E6%B5%8B%E8%AF%95&Write_enable=test')
         print('maindata is',data)

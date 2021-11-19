@@ -1,7 +1,7 @@
 #####读合同详情
 
 # from .init_connect import *
-from common.init_connect import *
+from init_connect import *
 # from init_connect import *
 
 def format_contract_num(row):
@@ -68,5 +68,5 @@ def read_contract_num_detail(contract_num):
         return status,msg,[]
 
 if __name__ == '__main__':
-        data = read_contract_num_detail('20211015-003')
+        data = read_contract_num_detail('211119-001-1')
         print('bak:',data)
