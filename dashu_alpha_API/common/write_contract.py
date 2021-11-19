@@ -208,7 +208,10 @@ def write_contract_by(contract_str):
                     sql='insert into Wrk_Jobs(JobNo,JobName,Client,OrderDate,Address,LinkMan,Memo,Tel,PactNo,IsLock,State,GUID,Designer,Calculator,Dealer)values('+"'"+pre_data['JobNo']+"'"+','+"'"+pre_data['JobName']+"'"+','+"'"+pre_data['Client']+"'"+','+"'"+pre_data['OrderDate']+"'"+','+"'"+pre_data['Address']+"'"+','+"'"+pre_data['LinkMan']+"'"+','+"'"+pre_data['Memo']+"'"+','+"'"+pre_data['Tel']+"'"+','+"'"+pre_data['PactNo']+"'"+','+'0'+','+'0'+','+"'"+pre_data['GUID']+"'"+','+"'"+pre_data['Designer']+"'"+','+"'"+pre_data['Calculator']+"'"+','+"'"+pre_data['Dealer']+"'"+')'
                     
                     print('sql is',sql)
+                    
                     cursor.execute(sql)
+                    ## 应该判断写入位是否为55aa ，如果是 写入，写入错误返回错误
+
                     connect.commit()
                     cursor.close()
                     connect.close()
@@ -228,7 +231,7 @@ def write_contract_by(contract_str):
         else:
             print('不能下单 ，找到一个相同合同号的信息：',contract_num[2])
             data['status'] = False
-            data['msg']='this contract allrady exsist ,',contract_num[2]
+            data['msg']='this contract has allrady exsist ,',contract_num[2]
             return data
 
 
