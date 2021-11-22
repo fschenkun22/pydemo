@@ -5,8 +5,8 @@ import re
 import datetime
 import uuid
 import time
-from init_connect import *
-from read_contract_num_detail import *
+from common.init_connect import *
+from common.read_contract_num_detail import *
 
 ## 翻译接单数据
 def format_contract_str(contract_str):
@@ -190,29 +190,29 @@ def write_contract_by(contract_str):
 
     ref_data = format_contract_str(contract_str)
     ### 格式化数据后开始正式写入
-    print('ref_data is :',ref_data)
+    # print('ref_data is :',ref_data)
     if ref_data['status'] == True:
-        print('通过检测:',ref_data['data']['PactNo'])
+        # print('format checked pass:',ref_data['data']['PactNo'])
         ## 能到达这说明基本格式没有问题，拿合同号去查合同号是否存在
         pre_data = ref_data['data']
         contract_num = read_contract_num_detail(ref_data['data']['PactNo'])
-        print('查询合同号结果:',contract_num)
+        # print('查询合同号结果:',contract_num)
         if contract_num[0] == False:
-            print('没有检测到该合同任何数据，可以下单了')
+            # print('没有检测到该合同任何数据，可以下单了')
             try:
                 connect = conn()
                 if connect:
                     cursor = connect.cursor()
 
-                    print('ref：', ref_data)
+                    # print('ref：', ref_data)
                     sql='insert into Wrk_Jobs(JobNo,JobName,Client,OrderDate,Address,LinkMan,Memo,Tel,PactNo,IsLock,State,GUID,Designer,Calculator,Dealer)values('+"'"+pre_data['JobNo']+"'"+','+"'"+pre_data['JobName']+"'"+','+"'"+pre_data['Client']+"'"+','+"'"+pre_data['OrderDate']+"'"+','+"'"+pre_data['Address']+"'"+','+"'"+pre_data['LinkMan']+"'"+','+"'"+pre_data['Memo']+"'"+','+"'"+pre_data['Tel']+"'"+','+"'"+pre_data['PactNo']+"'"+','+'0'+','+'0'+','+"'"+pre_data['GUID']+"'"+','+"'"+pre_data['Designer']+"'"+','+"'"+pre_data['Calculator']+"'"+','+"'"+pre_data['Dealer']+"'"+')'
                     
-                    print('sql is',sql)
+                    # print('sql is',sql)
                     
                     cursor.execute(sql)
                     ## 应该判断写入位是否为55aa ，如果是 写入，写入错误返回错误
-
-                    connect.commit()
+                    if pre_data['Write_enable'] == '55aa':
+                        connect.commit()
                     cursor.close()
                     connect.close()
 
@@ -220,16 +220,15 @@ def write_contract_by(contract_str):
                     data['msg'] = 'write done'
                     return data
             except:
-                    raise
                     data['status'] = False
-                    data['msg'] = 'connect database error'
+                    data['msg'] = 'Write contract error, connect database error'
                     return data
 
 
 
 
         else:
-            print('不能下单 ，找到一个相同合同号的信息：',contract_num[2])
+            # print('不能下单 ，找到一个相同合同号的信息：',contract_num[2])
             data['status'] = False
             data['msg']='this contract has allrady exsist ,',contract_num[2]
             return data
@@ -246,5 +245,5 @@ def write_contract_by(contract_str):
 
 
 if __name__ == '__main__':
-        data = write_contract_by('/?PactNo=111119-001-1&JobNo=20211110%E5%8D%95%E5%8F%B7%E6%B5%8B%E8%AF%95&JobName=%E8%AE%A2%E5%8D%95%E5%90%8D%E7%A7%B0%E6%B5%8B%E8%AF%95&Client=%E5%AE%A2%E6%88%B7%E5%90%8D%E7%A7%B0%E6%B5%8B%E8%AF%95&OrderDate=now&Address=%E5%AE%89%E8%A3%85%E5%9C%B0%E5%9D%80%E6%B5%8B%E8%AF%95&LinkMan=%E8%81%94%E7%B3%BB%E4%BA%BA%E6%B5%8B%E8%AF%95&Memo=%E5%A4%87%E6%B3%A8%E6%B5%8B%E8%AF%95&Tel=15641366461&GUID=random&Designer=%E8%AE%BE%E8%AE%A1%E5%B8%88%E6%B5%8B%E8%AF%95&Calculator=%E6%8B%86%E5%8D%951&Dealer=%E4%BB%A3%E7%90%86%E5%95%86%E5%90%8D%E6%B5%8B%E8%AF%95&Write_enable=test')
+        data = write_contract_by('/?PactNo=111122-001-1&JobNo=20211110%E5%8D%95%E5%8F%B7%E6%B5%8B%E8%AF%95&JobName=%E8%AE%A2%E5%8D%95%E5%90%8D%E7%A7%B0%E6%B5%8B%E8%AF%95&Client=%E5%AE%A2%E6%88%B7%E5%90%8D%E7%A7%B0%E6%B5%8B%E8%AF%95&OrderDate=now&Address=%E5%AE%89%E8%A3%85%E5%9C%B0%E5%9D%80%E6%B5%8B%E8%AF%95&LinkMan=%E8%81%94%E7%B3%BB%E4%BA%BA%E6%B5%8B%E8%AF%95&Memo=%E5%A4%87%E6%B3%A8%E6%B5%8B%E8%AF%95&Tel=15641366461&GUID=random&Designer=%E8%AE%BE%E8%AE%A1%E5%B8%88%E6%B5%8B%E8%AF%95&Calculator=%E6%8B%86%E5%8D%951&Dealer=%E4%BB%A3%E7%90%86%E5%95%86%E5%90%8D%E6%B5%8B%E8%AF%95&Write_enable=test')
         print('maindata is',data)

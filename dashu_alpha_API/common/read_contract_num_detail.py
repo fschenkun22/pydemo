@@ -1,8 +1,8 @@
 #####读合同详情
 
 # from .init_connect import *
-from init_connect import *
 # from init_connect import *
+from common.init_connect import *
 
 def format_contract_num(row):
     # print('format data:',row)
@@ -19,7 +19,10 @@ def format_contract_num(row):
     tmp_row['Tel'] = row[12]
     tmp_row['IsLock'] = row[14]
     tmp_row['State'] = row[19]
-    tmp_row['Area'] = float(row[29]) 
+    if row[29] == None:
+        tmp_row['Area']=0
+    else:
+        tmp_row['Area'] = float(row[29])
     tmp_row['Barcode'] = row[34]
 
 
@@ -58,7 +61,6 @@ def read_contract_num_detail(contract_num):
             return status,msg,rfrow
     except TypeError:
         # print('捕获到类型写入错误 可能数据读混乱了')
-        # raise
         status = False
         msg = "Error step read_contract_num ,The data has been read from the alpha database,but it's empty or format error"
         return status,msg,[]
@@ -68,5 +70,5 @@ def read_contract_num_detail(contract_num):
         return status,msg,[]
 
 if __name__ == '__main__':
-        data = read_contract_num_detail('211119-001-1')
+        data = read_contract_num_detail('111122-001-1')
         print('bak:',data)

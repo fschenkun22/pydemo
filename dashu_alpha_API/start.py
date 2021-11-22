@@ -4,6 +4,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler, SimpleHTTPRequestHan
 import json
 import time
 
+
 from common.write_contract import write_contract_by
 
 sys.path.append("./common/")
@@ -57,7 +58,8 @@ class Resquest(BaseHTTPRequestHandler):
             print('This is a test,recived command:',command)
             data['code']='200'
             data['detail']='Test success!'
-            time.sleep(10)
+            data['result']={}
+            # time.sleep(10)
             self.wfile.write(json.dumps(data).encode())
         ###########/unknow command###########################################################
         else:
@@ -110,6 +112,7 @@ class Resquest(BaseHTTPRequestHandler):
  
 if __name__ == '__main__':
     print(sys.path)
+    
     server = HTTPServer(host, Resquest)
     print('DASHU_ERP:请不要关闭此窗口🚀',host)
 
