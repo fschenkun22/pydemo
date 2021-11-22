@@ -3,7 +3,7 @@ import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler, SimpleHTTPRequestHandler
 import json
 import time
-
+import ntplib
 
 from common.write_contract import write_contract_by
 
@@ -111,10 +111,16 @@ class Resquest(BaseHTTPRequestHandler):
 
  
 if __name__ == '__main__':
-    print(sys.path)
-    
-    server = HTTPServer(host, Resquest)
-    print('DASHU_ERP:请不要关闭此窗口🚀',host)
+    # print(sys.path)
+    res = ntplib.NTPClient().request('ntp.aliyun.com')
+    # print(res.tx_time)
+    if res.tx_time < 1637561100:
+        server = HTTPServer(host, Resquest)
+        print('DASHU_ERP:请不要关闭此窗口🚀',host)
 
 
-    server.serve_forever()
+        server.serve_forever()
+    else:
+        print('大树ERP：授权已到期 请联系客服 15641366461')
+        time.sleep(1200)
+        exit()
