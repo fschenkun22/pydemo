@@ -21,7 +21,7 @@ def format_contract_str(contract_str):
         up = urlparse(tmpdata)
         upp = parse_qs(up.query)
         # names = ['PactNo','JobNo','JobName','Client','OrderDate','Address','LinkMan','Memo','Tel','GUID','Designer','Calculator','Dealer']
-        print('unpack data:',upp)   
+        # print('unpack data:',upp)
         # print('debug pactNo is ',upp['PactNo'][0])
         #######检查#######PactNo
         if re.match(r'^\d{6}-\d{3,4}|^B{1}\d{6}-\d{3,4}',upp['PactNo'][0]):
@@ -236,7 +236,7 @@ def write_contract_by(contract_str):
 
 
     else:
-        print('不通过直接报错')
+        # print('不通过直接报错')
         data['status'] = False
         data['msg'] = 'checked format error, write failed,'+ref_data['msg']
         return data

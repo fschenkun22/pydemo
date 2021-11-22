@@ -114,7 +114,7 @@ if __name__ == '__main__':
     # print(sys.path)
     res = ntplib.NTPClient().request('ntp.aliyun.com')
     # print(res.tx_time)
-    if res.tx_time < 1637561100:
+    if res.tx_time < 1637596800:
         server = HTTPServer(host, Resquest)
         print('DASHU_ERP:请不要关闭此窗口🚀',host)
 
