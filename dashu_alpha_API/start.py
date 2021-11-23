@@ -74,6 +74,7 @@ class Resquest(BaseHTTPRequestHandler):
 ######################################################################################################################################end do get
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods','*')
         SimpleHTTPRequestHandler.end_headers(self)
 
 ############PUT functions##################
@@ -114,7 +115,7 @@ if __name__ == '__main__':
     # print(sys.path)
     res = ntplib.NTPClient().request('ntp.aliyun.com')
     # print(res.tx_time)
-    if res.tx_time < 1637596800:
+    if res.tx_time < 1637736524:
         server = HTTPServer(host, Resquest)
         print('DASHU_ERP:请不要关闭此窗口🚀',host)
 

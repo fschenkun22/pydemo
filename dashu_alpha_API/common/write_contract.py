@@ -175,6 +175,7 @@ def format_contract_str(contract_str):
 
 
     except:
+        raise
         data['data']=''
         data['status']=False
         data['msg']='error when format contract str'
