@@ -73,9 +73,15 @@ class Resquest(BaseHTTPRequestHandler):
         # 命令正确，可以调用数据库查询函数处理，并把结果赋值给result，处理过程中错误把code改成错误代码
 ######################################################################################################################################end do get
     def end_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods','*')
+        self.send_header('Access-Control-Allow-Origin','*')
+        self.send_header('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,OPTIONS')
+        self.send_header('Access-Control-Allow-Headers','*')
         SimpleHTTPRequestHandler.end_headers(self)
+
+    def do_OPTIONS(self):
+        self.send_response(200, "ok")
+        self.end_headers()
+
 
 ############PUT functions##################
     def do_PUT(self):
