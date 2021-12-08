@@ -1938,3 +1938,5 @@
     "msg": "write done"
 }
 ```
+
+pyinstaller -F .\start.py
