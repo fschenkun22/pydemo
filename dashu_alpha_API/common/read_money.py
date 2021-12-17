@@ -1,9 +1,15 @@
 #####根据jobid 读取报价
 
+from configparser import ConfigParser, Error
+from os import error, name
+
 # from .init_connect import *
 # from common.read_mater_name import read_material_name_by_material
 from common.init_connect import *
 # from init_connect import *
+
+cfg = ConfigParser()
+cfg.read('./config.ini')
 
 def format_money(row):
     fdata = {}
@@ -16,27 +22,95 @@ def format_money(row):
 
 def format_row_money(item):
     tmp = {}
-    tmp['JPID'] = item[0]
-    tmp['ID']=item[1]
-    tmp['ProductName2']=item[2]
-    tmp['ItemName']=item[3].encode('latin-1').decode('gbk')
-    tmp['Discount']=float(item[4]) 
-    tmp['CateID']=item[5]
-    tmp['Category']=item[6].encode('latin-1').decode('gbk')
-    tmp['Name']=item[7]
-    tmp['Qty']=float(item[8]) 
-    # print(item[9])
-    if item[9]:
-        tmp['Price']=float(item[9])
+    # print('准备 try',item)
+    JPID =  int(cfg.get('price_col','JPID')) if cfg.get('price_col','JPID') else None
+    ID =  int(cfg.get('price_col','ID')) if cfg.get('price_col','ID') else None
+    ProductName2 =  int(cfg.get('price_col','ProductName2')) if cfg.get('price_col','ProductName2') else None
+    ItemName =  int(cfg.get('price_col','ItemName')) if cfg.get('price_col','ItemName') else None
+    Discount =  int(cfg.get('price_col','Discount')) if cfg.get('price_col','Discount') else None
+    CateID =  int(cfg.get('price_col','CateID')) if cfg.get('price_col','CateID') else None
+    Category =  int(cfg.get('price_col','Category')) if cfg.get('price_col','Category') else None
+    Name =  int(cfg.get('price_col','Name')) if cfg.get('price_col','Name') else None
+    Qty =  int(cfg.get('price_col','Qty')) if cfg.get('price_col','Qty') else None
+    Price =  int(cfg.get('price_col','Price')) if cfg.get('price_col','Price') else None
+    Length =  int(cfg.get('price_col','Length')) if cfg.get('price_col','Length') else None
+    Width =  int(cfg.get('price_col','Width')) if cfg.get('price_col','Width') else None
+
+
+    if JPID:
+        tmp['JPID']=item[JPID]
     else:
-        tmp['Price'] = 0
-    tmp['Length']=float(item[10]) 
-    tmp['Width']=float(item[11]) 
+        tmp['JPID'] = '' 
+    
+
+    if ID:
+        tmp['ID']=item[ID]
+    else:
+        tmp['ID'] = '' 
+    
+    if ProductName2:
+        tmp['ProductName2']=item[ProductName2]
+    else:
+        tmp['ProductName2'] = '' 
+
+    if ItemName:
+        tmp['ItemName']=item[ItemName].encode('latin-1').decode('gbk')
+    else:
+        tmp['ItemName'] = '' 
+    if Discount:
+        tmp['Discount']=float(item[Discount])
+    else:
+        tmp['Discount'] = '' 
+
+    if CateID:
+        tmp['CateID']=item[CateID]
+    else:
+        tmp['CateID'] = '' 
+
+    if Category:
+        tmp['Category']=item[Category].encode('latin-1').decode('gbk')
+    else:
+        tmp['Category'] = '' 
+
+    if Name:
+        tmp['Name']=item[Name]
+    else:
+        tmp['Name'] = '' 
+
+    if Qty:
+        tmp['Qty']=float(item[Qty])
+    else:
+        tmp['Qty'] = 0 
+
+    if Price:
+        tmp['Price']= float(item[Price]) if item[Price] else 0
+    else:
+        tmp['Price'] = 0 
+
+    if Length:
+        tmp['Length']=float(item[Length])
+    else:
+        tmp['Length'] = 0
+
+    if Width:
+        tmp['Width']=float(item[Width])
+    else:
+        tmp['Width'] = 0 
+    # print(123)
+
+
+        
+
+
+ 
+
     return tmp
     
 
 
 def read_money_by_JobID(JobID):
+    cfg = ConfigParser()
+    cfg.read('./config.ini')
     if JobID == '':
         status = False
         msg = "Error step read_money_by_JobID  ,jobID can not empty"
@@ -47,49 +121,7 @@ def read_money_by_JobID(JobID):
             # print('数据库链接成功')
             cursor = connect.cursor()
             # print('reading contract_num:',contract_num)
-            sql = '''
-                select * from (
-                select A.JPID,A.ID ID,C.ProductName2,A.PanelName2 ItemName,ISNULL(C.FactoryDiscount,1) Discount,1 CateID,'双饰面板' Category,B.MaterName Name,SUM(A.Length*A.Width*A.Qty/1000000) Qty,A.Price,A.Length Length,A.Width Width                                                                                                           
-                from Wrk_JobPanels A left join Bas_Material B on A.Material=B.MaterID
-                left join Wrk_JobProducts C on A.JPID=C.JPID
-                left join bas_panels e on A.panelID=e.panelID
-                where A.JobID=@JobID and  charindex('不报价', isnull(e.description,''))=0                                    
-                group by A.JPID,C.ProductName2,A.PanelName2,ISNULL(C.FactoryDiscount,1),A.Material,B.MaterName,A.Price ,A.Length,A.Width,A.Qty,A.ID           
-                union all
-                select A.JPID,1 ID,C.ProductName2,'异形'  ItemName,1 Discount,2 CateID,'异形' Category,'异形板件' Name,SUM(A.Qty) Qty,10 Price,1 Length,1 Width                                 
-                from Wrk_JobPanels A left join Wrk_JobProducts C on A.JPID=C.JPID 
-                left join bas_panels e on A.panelID=e.panelID  
-                where A.JobID=@JobID and CHARINDEX('异形',A.Memo)>0       and    charindex('异形不算', isnull(e.description,''))=0       
-                group by A.JPID,C.ProductName2
-                union all    
-                select A.JPID,'' ID,C.ProductName2,A.Unit ItemName,1 Discount,2 CateID,'五金' Category,
-                    ISNULL(A.WJName2,A.WJName) Name,SUM(case when B.Type=3 then case when isnull(a.unit,'')='根' then A.Qty else ISNULL(A.Length/1000*A.Qty,0)  end else a.qty end) Qty ,   
-                    CASE WHEN A.WJName2 IS NOT NULL THEN B.Price ELSE 0 END Price,1 Length,1 Width 
-                from Wrk_JobHardware A left join Bas_Hardware B on A.WJID=B.WJID
-                left join Wrk_JobProducts C on A.JPID=C.JPID
-                where B.PriceType>0 and A.JobID=@JobID  and  charindex('不报价', isnull(b.description,''))=0                                               
-                group by A.JPID,C.ProductName2,A.Unit,ISNULL(A.WJName2,A.WJName),
-                    CASE WHEN A.WJName2 IS NOT NULL THEN B.Price ELSE 0 END
-                union all
-                select A.JPID,'' ID,C.ProductName2,'' ItemName,ISNULL(C.FactoryDiscount,1) Discount,3 CateID,'封边材料' Category,
-                    A.EdgeName Name,SUM(Length)/1000 Qty,B.Price,1 Length,1 Width                                                  
-                from
-                (select JPID,EBL1 EdgeName,(Length+20)*Qty Length from Wrk_JobPanels where JobID=@JobID and EBL1<>''
-                union all
-                select JPID,EBL2 EdgeName,(Length+20)*Qty Length from Wrk_JobPanels where JobID=@JobID and EBL2<>''
-                union all
-                select JPID,EBW1 EdgeName,(Width+20)*Qty Length from Wrk_JobPanels where JobID=@JobID and EBW1<>''
-                union all
-                select JPID,EBW2 EdgeName,(Width+20)*Qty Length from Wrk_JobPanels where JobID=@JobID and EBW2<>''
-                ) A left join Bas_EdgeBanding B on A.EdgeName=B.EdgeName
-                left join Wrk_JobProducts C on A.JPID=C.JPID
-                group by A.JPID,C.ProductName2,ISNULL(C.FactoryDiscount,1),A.EdgeName,B.Price   
-                union all
-                select 999999 JPID,'' ID, A.ProductName2,'' ItemName,ISNULL(B.FactoryDiscount,1) Discount,
-                    4 CateID,'组件' Category,A.ProductName2 Name,A.Qty,A.FactoryPrice Price,1 Length,1 Width 
-                from Wrk_JobSubs A left join Wrk_JobProducts B on A.JPID=B.JPID where A.JobID=@JobID  and ISNULL(A.FactoryPrice,0)>0                      
-                ) A order by JPID,CateID
-            '''
+            sql = cfg.get('sql','price')
             sql = sql.replace('@JobID',JobID)
             # print(sql)
             cursor.execute(sql)
@@ -102,7 +134,9 @@ def read_money_by_JobID(JobID):
                 msg = 'No data at read_money'
                 data = {}
                 return status,msg,{}
+            print('price result =',row)
             data = format_money(row)
+            # data = str(row)
             status = True
             msg = 'read done money'
             return status,msg,data
@@ -110,7 +144,7 @@ def read_money_by_JobID(JobID):
 
     except TypeError:
         # print('捕获到类型写入错误 可能数据读混乱了')
-
+        raise
         status = False
         msg = "Error step read_money ,The data has been read from the alpha database,but it's empty or format error"
         return status,msg,{}
