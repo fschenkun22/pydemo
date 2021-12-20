@@ -1,7 +1,7 @@
 ## 根据materialID 读取mater name
 
-# from .init_connect import *
-from common.init_connect import *
+from .init_connect import *
+# from common.init_connect import *
 # from init_connect import *
 
 def format_mater(row):

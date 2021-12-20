@@ -35,6 +35,7 @@ def format_row_money(item):
     Price =  int(cfg.get('price_col','Price')) if cfg.get('price_col','Price') else None
     Length =  int(cfg.get('price_col','Length')) if cfg.get('price_col','Length') else None
     Width =  int(cfg.get('price_col','Width')) if cfg.get('price_col','Width') else None
+    PanelType =  int(cfg.get('price_col','PanelType')) if cfg.get('price_col','PanelType') else None
 
 
     if JPID:
@@ -96,6 +97,13 @@ def format_row_money(item):
         tmp['Width']=float(item[Width])
     else:
         tmp['Width'] = 0 
+
+    if Width:
+        tmp['PanelType']=float(item[PanelType])
+    else:
+        tmp['PanelType'] = 0 
+
+    
     # print(123)
 
 

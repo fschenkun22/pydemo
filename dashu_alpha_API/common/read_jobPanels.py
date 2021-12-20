@@ -1,10 +1,15 @@
 #####根据JPID 找到所有板件 
 
-# from .init_connect import *
+
 from common.read_mater_name import read_material_name_by_material
+from common.read_mater_panel_type import read_material_paneltype_by_PanelID
 from common.init_connect import *
+
 # from read_mater_name import read_material_name_by_material
+# from read_mater_panel_type import read_material_paneltype_by_PanelID
 # from init_connect import *
+
+
 
 def format_panels(row):
     tmp = {}
@@ -38,7 +43,7 @@ def get_by_JPID(JPID,row,cont):
     tmp['Memo']=row[cont][10]
     tmp['IsPackScan']=row[cont][11]
     tmp['Material']=read_material_name_by_material(str(row[cont][12]))
-
+    tmp['PanelType']=read_material_paneltype_by_PanelID(str(row[cont][13]))
     
     return tmp
 
@@ -55,7 +60,7 @@ def read_job_panels_by_JPID(JPID):
             # print('数据库链接成功')
             cursor = connect.cursor()
             # print('reading contract_num:',contract_num)
-            sql = "select ID,JPID,PanelName2,Barcode,Length,Width,EBL1,EBL2,EBW1,EBW2,Memo,IsPackScan,Material from Wrk_JobPanels "+"where JPID="+"'"+JPID+"'"
+            sql = "select ID,JPID,PanelName2,Barcode,Length,Width,EBL1,EBL2,EBW1,EBW2,Memo,IsPackScan,Material,PanelID from Wrk_JobPanels "+"where JPID="+"'"+JPID+"'"
             # print(sql)
             # exit()
             cursor.execute(sql)
