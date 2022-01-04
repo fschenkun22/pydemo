@@ -12,7 +12,7 @@ from common.read_full_contract_num import get_full
 
 
 data = {'code':'200'}
-host = ('127.0.0.1', 65500)
+host = ('0.0.0.0', 65500)
  
 class Resquest(BaseHTTPRequestHandler):
 
@@ -90,7 +90,7 @@ class Resquest(BaseHTTPRequestHandler):
         self.headers['content-length']
         content_len = int(self.headers['content-length'])
         post_body = self.rfile.read(content_len)
-        # print("command str :",self.path)
+        print("command str :",self.path)
         ref_data = write_contract_by(self.path)
 
         if ref_data['status'] == True:
@@ -121,7 +121,7 @@ if __name__ == '__main__':
     # print(sys.path)
     res = ntplib.NTPClient().request('ntp.aliyun.com')
     # print(res.tx_time)
-    if res.tx_time < 1672498800:
+    if res.tx_time < 1672498100:
         server = HTTPServer(host, Resquest)
         print('DASHU_ERP:请不要关闭此窗口🚀',host)
 

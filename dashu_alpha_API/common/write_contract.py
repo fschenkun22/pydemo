@@ -15,11 +15,19 @@ def format_contract_str(contract_str):
     data['msg']=''
     data['data']={}
     collect_data = {}
-
+    print('debug:',contract_str)
     try:
-        tmpdata = unquote(contract_str)
-        up = urlparse(tmpdata)
-        upp = parse_qs(up.query)
+
+        tmpdata = urlparse(contract_str) # 解码
+        print('tmpdata:',tmpdata)
+        # up = unquote(tmpdata.query) 
+        # 
+        up = tmpdata.query
+        print('up:',up)
+        upp = parse_qs(up)
+
+        
+        print('upp:',upp)
         # names = ['PactNo','JobNo','JobName','Client','OrderDate','Address','LinkMan','Memo','Tel','GUID','Designer','Calculator','Dealer']
         # print('unpack data:',upp)
         # print('debug pactNo is ',upp['PactNo'][0])
