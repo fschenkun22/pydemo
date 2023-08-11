@@ -4,6 +4,10 @@ from http.server import HTTPServer, BaseHTTPRequestHandler, SimpleHTTPRequestHan
 import json
 import time
 import ntplib
+import cgi
+import urllib.parse
+import urllib.request
+import re
 
 from common.write_contract import write_contract_by
 
@@ -16,6 +20,67 @@ host = ('0.0.0.0', 65500)
  
 class Resquest(BaseHTTPRequestHandler):
 
+ ####### POST functions##################
+    def do_POST(self):
+        data_post={}
+        # 获取post提交的数据
+        ctype, pdict = cgi.parse_header(self.headers['content-type'])
+        print('ctype:',ctype)
+        print('pdict:',pdict)
+        dt = self.rfile.read(int(self.headers['content-length']))
+        print('dt:',dt)#
+        # dt现在返回是上面那样，从里面解析出 key 和 value
+        pattern = r'name="(\w+)"\r\n\r\n(\w+)'
+        result = re.findall(pattern, dt.decode('utf-8'))
+        print('result:',result) # 结果非常完美result: [('aaa', '222'), ('bbb', '555')]
+
+        # 从结果中提取指定的值
+        for i in result:
+            if i[0] == 'aaa':
+                aaa = i[1]
+            elif i[0] == 'bbb':
+                bbb = i[1]
+        print('aaa:',aaa)
+        print('bbb:',bbb)
+
+    
+            
+        # elif ctype == 'application/x-www-form-urlencoded':
+        #     print('检测到进入urlencoded了')
+        #     length = int(self.headers['content-length'])
+        #     params = cgi.parse_qs(self.rfile.read(length), keep_blank_values=1)
+        # else:
+        #     params = {}
+        # print(params)
+        
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(b"Hello, POST request received!")
+
+        if False == True:
+            print('写入通过')
+            data_post['code']=200
+            data_post['status']=True
+            data_post['msg']='write done'
+            self.send_response(200)
+            self.send_header("Content-type", "application/json;charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps(data_post).encode())
+
+
+        else:
+            print('打印失败')
+            data_post['code']=500
+            data_post['status']=False
+            data_post['msg']='打印失败的处理'
+            self.send_response(200)
+            self.send_header("Content-type", "application/json;charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps(data_post).encode())
+
+
+ 
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
@@ -116,12 +181,11 @@ class Resquest(BaseHTTPRequestHandler):
             
 
 
- 
 if __name__ == '__main__':
     # print(sys.path)
     res = ntplib.NTPClient().request('ntp.aliyun.com')
     # print(res.tx_time)
-    if res.tx_time < 1672498100:
+    if res.tx_time < 1872498100:
         server = HTTPServer(host, Resquest)
         print('DASHU_ERP:请不要关闭此窗口🚀',host)
 

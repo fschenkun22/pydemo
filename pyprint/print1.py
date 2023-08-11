@@ -36,11 +36,28 @@ if __name__ == '__main__':
     hDC.StartPage()
 
     hDC.MoveTo(0, 100)
-    hDC.LineTo(page_size[0], 100)
+    hDC.LineTo(page_size[0]-200, 100)
+
+
+
+    hDC.MoveTo(0, 500)# 第二条分割线 第二个值要相等
+    hDC.LineTo(page_size[0]-0, 500) # 第二条分割线
+
+    # 右上角  左下角角标
+    hDC.MoveTo(0,page_size[1]-100)
+    hDC.LineTo(100, page_size[1]-100)
+    hDC.MoveTo(0,page_size[1]-100)
+    hDC.LineTo(0,page_size[1]-200 )
+
+    hDC.MoveTo(page_size[0]-100,0)
+    hDC.LineTo(page_size[0]-100,100 )
+    hDC.MoveTo(page_size[0]-100,0)
+    hDC.LineTo(page_size[0]-200,0 )
     
     font = win32ui.CreateFont({
         # 'name': 'Arial',
         'height': 100,
+        'weight': 800,
     })
     hDC.SelectObject(font)
     hDC.TextOut(350, 0, '开始的内容说明')
@@ -66,7 +83,7 @@ if __name__ == '__main__':
 
     dib = ImageWin.Dib(bmp)
     # 参数是一个元组，表示绘制的位置和大小。元组中的四个数字分别代表左上角的x坐标、左上角的y坐标、右下角的x坐标和右下角的y坐标
-    dib.draw(hDC.GetHandleOutput(), (0, 0, bmp.size[0], bmp.size[1]))
+    dib.draw(hDC.GetHandleOutput(), (0,0, bmp.size[0], bmp.size[1]))
 
     hDC.EndPage()
     hDC.EndDoc()
