@@ -35,10 +35,9 @@ class Resquest(BaseHTTPRequestHandler):
         dt = self.rfile.read(int(self.headers['content-length']))
         print('dt:', dt)
         # dt现在返回是上面那样，从里面解析出 key 和 value
-        pattern = r'name="(\w+)"\r\n\r\n(\w+)'
+        pattern = r'name="(.+?)"\r\n\r\n(.+?)\r\n'
         result = re.findall(pattern, dt.decode('utf-8'))
-        # 结果非常完美result: [('text1', '222'), ('text2', '555')]
-        print('result:', result)
+        print('result⚠️:', result)
 
         # 从结果中提取指定的值
         for i in result:
@@ -60,30 +59,32 @@ class Resquest(BaseHTTPRequestHandler):
 
         print('data_post:', data_post)
 
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-        self.wfile.write("Hello, POST request received!".encode('utf-8'))
-
         if res == '打印成功':
             print('写入通过')
             data_post['code'] = 200
             data_post['status'] = True
             data_post['msg'] = 'write done'
+
             self.send_response(200)
             self.send_header("Content-type", "application/json;charset=utf-8")
             self.end_headers()
-            self.wfile.write(json.dumps(data_post).encode())
+            self.wfile.write(json.dumps(result).encode())
+
+
+
+   
 
         else:
             print('可能是测试或者写入失败',res)
-            data_post['code'] = 500
-            data_post['status'] = False
-            data_post['msg'] = 'write fail'
+            data_post = res
             self.send_response(200)
             self.send_header("Content-type", "application/json;charset=utf-8")
+            
+            print('data_post 准备返回请求头',data_post)
             self.end_headers()
             self.wfile.write(json.dumps(data_post).encode())
+
+
 
     def do_GET(self):
         self.send_response(200)
@@ -143,12 +144,13 @@ class Resquest(BaseHTTPRequestHandler):
 # end do get
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods',
-                         'GET,POST,PUT,DELETE,OPTIONS')
+        self.send_header('Access-Control-Allow-Methods','*')
         self.send_header('Access-Control-Allow-Headers', '*')
+        print('end headers')
         SimpleHTTPRequestHandler.end_headers(self)
 
     def do_OPTIONS(self):
+
         self.send_response(200, "ok")
         self.end_headers()
 
