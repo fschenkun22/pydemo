@@ -11,7 +11,11 @@ import cgi
 import urllib.parse
 import urllib.request
 import re
-
+from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QLineEdit
+from PySide6.QtUiTools import QUiLoader
+from PySide6.QtCore import QFile
+# 异步需要的函数载入threading
+import threading
 
 from common.write_contract import write_contract_by
 
@@ -24,7 +28,6 @@ host = ('0.0.0.0', 65500)
 
 
 class Resquest(BaseHTTPRequestHandler):
-
  ####### POST functions##################
     def do_POST(self):
         data_post = {}
@@ -38,6 +41,8 @@ class Resquest(BaseHTTPRequestHandler):
         pattern = r'name="(.+?)"\r\n\r\n(.+?)\r\n'
         result = re.findall(pattern, dt.decode('utf-8'))
         print('result⚠️:', result)
+        # 在textEdit上输出result
+        
 
         # 从结果中提取指定的值
         for i in result:
@@ -83,8 +88,6 @@ class Resquest(BaseHTTPRequestHandler):
             print('data_post 准备返回请求头',data_post)
             self.end_headers()
             self.wfile.write(json.dumps(data_post).encode())
-
-
 
     def do_GET(self):
         self.send_response(200)
@@ -154,7 +157,6 @@ class Resquest(BaseHTTPRequestHandler):
         self.send_response(200, "ok")
         self.end_headers()
 
-
 ############ PUT functions##################
 
     def do_PUT(self):
@@ -187,16 +189,45 @@ class Resquest(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(data_put).encode())
 
 
+
+
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        qfui = QFile('./start.ui')
+        qfui.open(QFile.ReadOnly)
+        qfui.close()
+        self.ui = QUiLoader().load(qfui)
+        # 绑定槽
+        self.ui.pushButton.clicked.connect(self.on_button_click)
+        self.ui.pushButton_2.clicked.connect(self.on_button_click)
+        # self.ui.textEdit.append("hello world")
+    def on_button_click(self):
+        print("Button clicked1111!")
+        print(f"Text in text box: ")
+        self.ui.textEdit.append("hello world")
+        # 启动handleServer
+        thread['handleServer'].start()
+
+    def on_button_click2(self):
+        print("Button clicked2!")
+        # 强行结束handleServer
+        self.th.stop()
+        #退出所有线程
+        sys.exit()
+
+
+
 if __name__ == '__main__':
-    # print(sys.path)
-    res = ntplib.NTPClient().request('ntp.aliyun.com')
-    # print(res.tx_time)
-    if res.tx_time < 1872498100:
+    def handleServer(MainWindow):
         server = HTTPServer(host, Resquest)
         print('DASHU_ERP:请不要关闭此窗口🚀', host)
-
         server.serve_forever()
-    else:
-        print('大树ERP：授权已到期 请联系客服 15641366461')
-        time.sleep(1200)
-        exit()
+    thread = {}
+    # 把handelServer加入线程
+    thread['handleServer'] = threading.Thread(target=handleServer)
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.ui.show() # 阻塞了
+    sys.exit(app.exec())
