@@ -11,9 +11,9 @@ import cgi
 import urllib.parse
 import urllib.request
 import re
-from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QLineEdit
+from PySide6.QtWidgets import QApplication, QWidget
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtCore import QFile
+from PySide6.QtCore import QFile, QThread, Signal, Slot, QSize
 # 异步需要的函数载入threading
 import threading
 
@@ -42,7 +42,9 @@ class Resquest(BaseHTTPRequestHandler):
         result = re.findall(pattern, dt.decode('utf-8'))
         print('result⚠️:', result)
         # 在textEdit上输出result
-        
+        window.thread_1.call_back(
+            '<font color="#595">Print</font>' + str(result)
+        )
 
         # 从结果中提取指定的值
         for i in result:
@@ -62,30 +64,32 @@ class Resquest(BaseHTTPRequestHandler):
             text3=data_post['text3']
         )
 
-        print('data_post:', data_post)
+        print('data_post:', res)
 
-        if res == '打印成功':
+        if res['code'] == 200 or res['code'] == 201:
+            window.thread_1.call_back(
+                '<font color="green">' + 'Print' + str(res['msg']) + '</font>'
+            )
+
             print('写入通过')
             data_post['code'] = 200
             data_post['status'] = True
-            data_post['msg'] = 'write done'
+            data_post['msg'] = '发送打印信号打印完毕'
 
             self.send_response(200)
             self.send_header("Content-type", "application/json;charset=utf-8")
             self.end_headers()
             self.wfile.write(json.dumps(result).encode())
 
-
-
-   
-
         else:
-            print('可能是测试或者写入失败',res)
+            window.thread_1.call_back(
+                '<font color="red">Print Error</font>' + str(res)
+            )
             data_post = res
             self.send_response(200)
             self.send_header("Content-type", "application/json;charset=utf-8")
-            
-            print('data_post 准备返回请求头',data_post)
+
+            print('data_post 准备返回请求头', data_post)
             self.end_headers()
             self.wfile.write(json.dumps(data_post).encode())
 
@@ -147,7 +151,7 @@ class Resquest(BaseHTTPRequestHandler):
 # end do get
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods','*')
+        self.send_header('Access-Control-Allow-Methods', '*')
         self.send_header('Access-Control-Allow-Headers', '*')
         print('end headers')
         SimpleHTTPRequestHandler.end_headers(self)
@@ -189,10 +193,22 @@ class Resquest(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(data_put).encode())
 
 
+class Mythread_1(QThread):
+    # 可以调用Mythread_1的call_back函数回显数据
+    signal_tuple = Signal(tuple)
+
+    def __init__(self):
+        super().__init__()
+
+    def run(self):
+        server = HTTPServer(host, Resquest)
+        server.serve_forever()
+
+    def call_back(self, data):
+        self.signal_tuple.emit(data)
 
 
-
-class MainWindow(QMainWindow):
+class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         qfui = QFile('./start.ui')
@@ -200,34 +216,34 @@ class MainWindow(QMainWindow):
         qfui.close()
         self.ui = QUiLoader().load(qfui)
         # 绑定槽
-        self.ui.pushButton.clicked.connect(self.on_button_click)
+        self.ui.pushButton.clicked.connect(self.setup_thread_1)
         self.ui.pushButton_2.clicked.connect(self.on_button_click)
         # self.ui.textEdit.append("hello world")
+
     def on_button_click(self):
         print("Button clicked1111!")
-        print(f"Text in text box: ")
-        self.ui.textEdit.append("hello world")
-        # 启动handleServer
-        thread['handleServer'].start()
 
     def on_button_click2(self):
         print("Button clicked2!")
-        # 强行结束handleServer
-        self.th.stop()
-        #退出所有线程
-        sys.exit()
 
+    def setup_thread_1(self):
+        self.thread_1 = Mythread_1()
+        self.thread_1.signal_tuple.connect(self.thread_1_finished)
+        self.thread_1.start()
+
+    def test(self):
+        print('test')
+
+    @Slot(tuple)
+    def thread_1_finished(self, item):
+        print('接收到子线程1结束信号:', item)
+        self.ui.textEdit.append(
+            str(item)
+        )
 
 
 if __name__ == '__main__':
-    def handleServer(MainWindow):
-        server = HTTPServer(host, Resquest)
-        print('DASHU_ERP:请不要关闭此窗口🚀', host)
-        server.serve_forever()
-    thread = {}
-    # 把handelServer加入线程
-    thread['handleServer'] = threading.Thread(target=handleServer)
     app = QApplication(sys.argv)
     window = MainWindow()
-    window.ui.show() # 阻塞了
-    sys.exit(app.exec())
+    window.ui.show()
+    app.exec()
