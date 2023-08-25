@@ -110,7 +110,7 @@ def print_full(qr_code='', text1='', text2='', text3=''):
         hDC.EndDoc()
 
         # 抛出错误
-        raise Exception('test')
+        # raise Exception('test')
 
         return {
             'code': 200,

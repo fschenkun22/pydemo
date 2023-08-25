@@ -43,7 +43,7 @@ class Resquest(BaseHTTPRequestHandler):
         print('result⚠️:', result)
         # 在textEdit上输出result
         window.thread_1.call_back(
-            '<font color="#595">Print</font>' + str(result)
+            '<font color="#595">Print cmd : </font>' + str(result)
         )
 
         # 从结果中提取指定的值
@@ -68,7 +68,8 @@ class Resquest(BaseHTTPRequestHandler):
 
         if res['code'] == 200 or res['code'] == 201:
             window.thread_1.call_back(
-                '<font color="green">' + 'Print' + str(res['msg']) + '</font>'
+                '<font color="green">' + 'print job finished : ' +
+                str(res['msg']) + '</font>'
             )
 
             print('写入通过')
@@ -108,7 +109,6 @@ class Resquest(BaseHTTPRequestHandler):
             content = 'nodata'
 
     # 获取到命令，开始下一步处理#################
-    ##########################################
     ################### command get#######################################################################
         if command == '/get/':
             print('command:', command)
@@ -148,7 +148,7 @@ class Resquest(BaseHTTPRequestHandler):
 
         # 如果监测有错误返回命令不能识别,请重试
         # 命令正确，可以调用数据库查询函数处理，并把结果赋值给result，处理过程中错误把code改成错误代码
-# end do get
+        # end do get
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', '*')
@@ -160,8 +160,6 @@ class Resquest(BaseHTTPRequestHandler):
 
         self.send_response(200, "ok")
         self.end_headers()
-
-############ PUT functions##################
 
     def do_PUT(self):
         data_put = {}
@@ -202,6 +200,7 @@ class Mythread_1(QThread):
 
     def run(self):
         server = HTTPServer(host, Resquest)
+        self.call_back('<font color="#595">Server start </font>')
         server.serve_forever()
 
     def call_back(self, data):
@@ -217,19 +216,28 @@ class MainWindow(QWidget):
         self.ui = QUiLoader().load(qfui)
         # 绑定槽
         self.ui.pushButton.clicked.connect(self.setup_thread_1)
-        self.ui.pushButton_2.clicked.connect(self.on_button_click)
+        self.ui.pushButton_2.clicked.connect(self.quit_thread_1)
         # self.ui.textEdit.append("hello world")
 
     def on_button_click(self):
-        print("Button clicked1111!")
+        # 禁用按键1
+        pass
+        
 
     def on_button_click2(self):
         print("Button clicked2!")
 
     def setup_thread_1(self):
+        # 禁用按键
+        self.ui.pushButton.setEnabled(False)
         self.thread_1 = Mythread_1()
         self.thread_1.signal_tuple.connect(self.thread_1_finished)
         self.thread_1.start()
+
+    # 销毁thread_1
+    def quit_thread_1(self):
+        self.thread_1.terminate()
+        self.ui.textEdit.append('<font color="#f00"> thread terminated </font>')
 
     def test(self):
         print('test')
