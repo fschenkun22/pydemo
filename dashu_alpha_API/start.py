@@ -16,6 +16,8 @@ from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import QFile, QThread, Signal, Slot, QSize
 # 异步需要的函数载入threading
 import threading
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 
 from common.write_contract import write_contract_by
 
@@ -29,6 +31,200 @@ host = ('0.0.0.0', 65500)
 
 class Resquest(BaseHTTPRequestHandler):
  ####### POST functions##################
+    def export_excel(self, data):
+        
+        try:
+            print('解析后需要打印的data',data)
+            # data 内容是这样 [('type', 'exportExcel'), ('header', '[object Object]'), ('list', '[object Object]')] 要解析出header和list
+            # [('type', 'exportExcel'), ('header', '{"合同号":"231215-002","单号":"231215-002-5-1WB_0","客户名称":"","拆单":"","客户地址":"","门板厚度":0,"门板颜色":"","门型":"","门型颜色":"","玻璃总价":0,"木箱总价":0,"工艺费总价":0,"反厂费用":0,"备注":"订单备注","name":"name"}'), ('list', '[{"key":1703048079088,"颜色":"默认颜色","宽":1,"高":1,"厚":1,"数量":0,"单价":0,"总价":0,"备注":"备注"}]')]解析出header和list
+            # 解析header
+            header = json.loads(data[1][1])
+            # 解析list
+            list = json.loads(data[2][1])
+            
+            print('解析后header',header)
+            print('解析后list',list)
+
+            wb = Workbook()
+            ws = wb.active
+
+            # data = json.loads(data['data'])
+            # print('解析后data',data['id'])
+            # 表格开始
+
+            # 第一行 内容 + style
+            ws.append(['诺梵希外购门板' + ' - '+str(header['合同号'])])
+            # 第一行字体25，加粗，微软雅黑，合并所有单元格，字体居中,下边框微软蓝色
+            ws['A1'].border = Border(bottom=Side(
+                border_style='thin', color='FF000000'))
+            ws['A1'].font = Font(name='微软雅黑', size=25, bold=True)
+            ws['A1'].alignment = Alignment(horizontal='center')
+            ws.merge_cells('A1:M1')
+
+
+            # 第二行 内容 + style 
+            ws.append([
+                '客户名称',header['客户名称'],'','','','拆单',header['拆单'],'','','客户地址',header['客户地址'],'','',
+            ])
+            # B~D合并单元格
+            ws.merge_cells('B2:E2')
+            # G~J合并单元格
+            ws.merge_cells('G2:I2')
+            # L~M合并单元格
+            ws.merge_cells('K2:M2')
+
+            ws.append([
+                '门板厚度',header['门板厚度'],'','','','门板颜色',header['门板颜色'],'','','门型',header['门型'],'','',
+            ])
+            # B~D合并单元格
+            ws.merge_cells('B3:E3')
+            # G~J合并单元格
+            ws.merge_cells('G3:I3')
+            # L~M合并单元格
+            ws.merge_cells('K3:M3')
+
+            ws.append([
+                '门型颜色',header['门型颜色'],'','','','玻璃总价',header['玻璃总价'],'','','木箱总价',header['木箱总价'],'','',
+            ])
+            # B~D合并单元格
+            ws.merge_cells('B4:E4')
+            # G~J合并单元格
+            ws.merge_cells('G4:I4')
+            # L~M合并单元格
+            ws.merge_cells('K4:M4')
+
+            ws.append([
+                '工艺费总价',header['工艺费总价'],'','','','反厂费用',header['反厂费用'],'','','备注',header['备注'],'','',
+            ])
+            # B~D合并单元格
+            ws.merge_cells('B5:E5')
+            # G~J合并单元格
+            ws.merge_cells('G5:I5')
+            # L~M合并单元格
+            ws.merge_cells('K5:M5')
+
+
+
+
+            # 第2,3,4,5行字体10，加粗，微软雅黑，居中，上下左右边框，背景浅灰色
+            for i in range(2, 6):
+                for j in range(1, 14):
+                    ws.cell(i, j).font = Font(
+                        name='微软雅黑', size=10, bold=True)
+                    ws.cell(i, j).alignment = Alignment(
+                        horizontal='center')
+                    ws.cell(i, j).border = Border(top=Side(border_style='thin', color='FF000000'), bottom=Side(
+                        border_style='thin', color='FF000000'), left=Side(border_style='thin', color='FF000000'), right=Side(border_style='thin', color='FF000000'))
+                    ws.cell(i, j).fill = PatternFill(
+                        fill_type='solid',
+                        # 微软浅蓝色
+                        fgColor='D3D3D3')
+                    
+
+            # A列整体宽一点
+            ws.column_dimensions['A'].width = 15
+                
+            
+            # G列 H列整体宽点
+            ws.column_dimensions['G'].width = 20
+            ws.column_dimensions['H'].width = 20
+            ws.column_dimensions['K'].width = 20
+            ws.column_dimensions['L'].width = 0
+            ws.column_dimensions['M'].width = 0
+            ws.column_dimensions['B'].width = 15
+
+
+
+            # 第三行下边距加宽
+            ws.row_dimensions[2].height = 20
+            ws.row_dimensions[3].height = 20
+
+
+            # 分割上面区域和下面区域
+            ws.append([''])
+
+
+
+            # 表头 
+            # region
+            
+            #  ws.append(['编码', '颜色', '宽', '高', '厚', '材积', '数量', '备注']) 背景微软浅蓝色
+            ws.append(['编码', '颜色', '宽', '高', '厚', '数量','单价','总价', '备注'])
+            # 第一行字体10，加粗，微软雅黑，居中，上下左右边框，背景微软蓝色
+            for i in range(1, 10):
+                ws.cell(7, i).font = Font(
+                    name='微软雅黑', size=10, bold=True)
+                ws.cell(7, i).alignment = Alignment(
+                    horizontal='center')
+                ws.cell(7, i).border = Border(top=Side(border_style='thin', color='FF000000'), bottom=Side(
+                    border_style='thin', color='FF000000'), left=Side(border_style='thin', color='FF000000'), right=Side(border_style='thin', color='FF000000'))
+                ws.cell(7, i).fill = PatternFill(
+                    fill_type='solid',
+                    # 微软浅蓝色
+                    fgColor='00A4ED')
+                
+            # 备注这列横跨剩下的
+            ws.merge_cells('I7:M7')
+
+                    
+            # endregion
+
+            
+            
+
+
+            # 表格内容
+            # 从第8行开始写入数据
+            # for i in range(0, len(list)):
+            #     ws.append([
+            #         list[i]['key'],list[i]['颜色'],list[i]['宽'],list[i]['高'],list[i]['厚'],list[i]['材积'],list[i]['数量'],list[i]['备注']
+            #     ])
+            for i in range(0, len(list)):
+                ws.append([
+                    str(list[i]['key']),list[i]['颜色'],list[i]['宽'],list[i]['高'],list[i]['厚'],list[i]['数量'],list[i]['单价'],list[i]['总价'],list[i]['备注']
+                ])
+            # 表格样式
+            # 第8行开始字体10，微软雅黑，居中，上下左右边框 行间距稍大
+            for i in range(8, len(list)+8):
+                for j in range(1, 10):
+                    ws.cell(i, j).font = Font(
+                        name='微软雅黑', size=10)
+                    ws.cell(i, j).alignment = Alignment(
+                        horizontal='center')
+                    ws.cell(i, j).border = Border(top=Side(border_style='thin', color='FF000000'), bottom=Side(
+                        border_style='thin', color='FF000000'), left=Side(border_style='thin', color='FF000000'), right=Side(border_style='thin', color='FF000000'))
+                    ws.cell(i, j).alignment = Alignment(
+                        vertical='center')
+                    ws.row_dimensions[i].height = 20
+                    # I列横跨剩余所有格
+                    ws.merge_cells('I'+str(i)+':M'+str(i))
+                    
+            # 表格样式
+                    
+
+
+            # 表格结束
+            # wb.save(''+str(header['id'])+'.xlsx')
+            # 导出到output目录下
+            wb.save('./output/'+str(header['合同号'])+'.xlsx')
+
+        except Exception as e:
+            print('导出失败', e)
+            window.thread_1.call_back(
+                '<font color="red">' + '导出失败,最可能发生这个错误的原因是文件正在被打开,被另外一个进程占用!: ' +
+                str(e) + '</font>'
+            )
+            return {
+                'code': 500,
+                'status': False,
+                'msg': str(e)
+            }
+
+        print('导出程序执行')
+
+
+
+    
     def do_POST(self):
         data_post = {}
         # 获取post提交的数据
@@ -45,54 +241,64 @@ class Resquest(BaseHTTPRequestHandler):
         window.thread_1.call_back(
             '<font color="#595">Print cmd : </font>' + str(result)
         )
-
-        # 从结果中提取指定的值
-        for i in result:
-            if i[0] == 'qr_code':
-                data_post['qr_code'] = i[1]
-            elif i[0] == 'text1':
-                data_post['text1'] = i[1]
-            elif i[0] == 'text2':
-                data_post['text2'] = i[1]
-            elif i[0] == 'text3':
-                data_post['text3'] = i[1]
-
-        res = printv1.print_full(
-            qr_code=data_post['qr_code'],
-            text1=data_post['text1'],
-            text2=data_post['text2'],
-            text3=data_post['text3']
-        )
-
-        print('data_post:', res)
-
-        if res['code'] == 200 or res['code'] == 201:
-            window.thread_1.call_back(
-                '<font color="green">' + 'print job finished : ' +
-                str(res['msg']) + '</font>'
-            )
-
-            print('写入通过')
+        # result: [('type', 'exportExcel'), ('header', '[object Object]'), ('list', '[object Object]')] 判断result里面type的值时exportExce还是print
+        # 如果是exportExcel,调用exportExcel函数
+        if result[0][1] == 'exportExcel':
+            print('执行导出 exportExcel',result)
+            # 调用exportExcel函数
+            self.export_excel(result)
             data_post['code'] = 200
             data_post['status'] = True
-            data_post['msg'] = '发送打印信号打印完毕'
-
+            data_post['msg'] = 'exportExcel done'
             self.send_response(200)
             self.send_header("Content-type", "application/json;charset=utf-8")
-            self.end_headers()
-            self.wfile.write(json.dumps(result).encode())
-
-        else:
-            window.thread_1.call_back(
-                '<font color="red">Print Error</font>' + str(res)
-            )
-            data_post = res
-            self.send_response(200)
-            self.send_header("Content-type", "application/json;charset=utf-8")
-
-            print('data_post 准备返回请求头', data_post)
             self.end_headers()
             self.wfile.write(json.dumps(data_post).encode())
+            window.thread_1.call_back(
+                '<font color="green">' + '导出信号发送完毕!: ' +
+                str(data_post['msg']) + '</font>'
+            )
+            return
+        # 如果是print,调用print函数
+        elif result[0][1] == 'print':
+            print('print')
+            # 调用print函数
+            printv1.print_full(
+                qr_code=result[1][1],
+                text1=result[2][1],
+                text2=result[3][1],
+                text3=result[4][1]
+            )
+            data_post['code'] = 200
+            data_post['status'] = True
+            data_post['msg'] = 'print done'
+            self.send_response(200)
+            self.send_header("Content-type", "application/json;charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps(data_post).encode())
+            window.thread_1.call_back(
+                '<font color="green">' + '打印信号发送完毕!: ' +
+                str(data_post['msg']) + '</font>'
+            )
+            return
+        
+        # 如果是test,直接返回成功
+        elif result[0][1] == 'test':
+            print('test')
+            
+            data_post['code'] = 200
+            data_post['status'] = True
+            data_post['msg'] = '导出打印接口连接正常' + printv1.get_printer_name()
+            self.send_response(200)
+            self.send_header("Content-type", "application/json;charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps(data_post).encode())
+            window.thread_1.call_back(
+                '<font color="green">' + '收到系统测试信号!: ' +
+                str(data_post['msg']) + '</font>'
+            )
+            return
+
 
     def do_GET(self):
         self.send_response(200)
@@ -200,7 +406,7 @@ class Mythread_1(QThread):
 
     def run(self):
         server = HTTPServer(host, Resquest)
-        self.call_back('<font color="#595">Server start </font>')
+        self.call_back('<font color="#595">Server start : 诺梵希导出表格,打印贴,alpha家通讯API</font>')
         server.serve_forever()
 
     def call_back(self, data):

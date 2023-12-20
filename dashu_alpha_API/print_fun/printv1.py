@@ -21,6 +21,9 @@ def get_setting(s):
     cfg.read('./config.ini')
     return cfg.get('print_settings', s)
 
+def get_printer_name():
+    return win32print.GetDefaultPrinter()
+
 
 def print_full(qr_code='', text1='', text2='', text3=''):
 
