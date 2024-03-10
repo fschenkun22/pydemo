@@ -7,6 +7,7 @@ from apps.test_app.main import test
 app = FastAPI()
 app.include_router(app1,prefix="/app1的路由前缀",tags=["app1的路由标签"])
 app.include_router(app2,prefix="/app2的路由前缀",tags=["app2的路由标签"])
+
 app.include_router(test,prefix="/test",tags=["用来测试各种请求响应等"])
 
 if __name__ == "__main__":
