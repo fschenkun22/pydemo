@@ -20,7 +20,5 @@ def read_item(item_id: int, q: Union[str, None] = None):
 # 主程序
 if __name__ == "__main__":
     import uvicorn
-
-    # 使用导入路径字符串而不是应用实例
     uvicorn.run("main:app", host="localhost", port=8000, reload=True)
 
