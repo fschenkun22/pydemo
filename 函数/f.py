@@ -1,8 +1,3 @@
-def hello(name):
-    print("hello",name)
-
-
-
-hello('参数')
-
-# 不写return返回none
+import yfinance as yf
+dat = yf.Ticker("MSFT")
+print(dat.history(period="1d"))
