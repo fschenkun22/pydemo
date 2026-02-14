@@ -1,0 +1,24 @@
+[wireguard]
+tunnel_name = "shenyang231"
+service_name = ""
+healthcheck_url = "https://www.baidu.com/"
+healthcheck_timeout_sec = 8
+ping_target = "10.0.0.1"
+enable_ping_check = true
+
+[monitor]
+check_interval_sec = 15
+max_retries = 2
+retry_interval_sec = 60
+cooldown_sec = 300
+probe_failures_before_disconnect = 3
+
+[logging]
+level = "INFO"
+max_bytes = 1048576
+backup_count = 5
+directory = "logs"
+filename = "service.log"
+
+[storage]
+db_path = "data/state.db"

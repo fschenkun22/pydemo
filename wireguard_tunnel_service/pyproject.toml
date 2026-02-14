@@ -1,0 +1,50 @@
+[project]
+name = "wireguard-tunnel-service"
+version = "0.1.0"
+description = "WireGuard tunnel health check service for Windows"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pyside6>=6.10.0",
+]
+
+[project.scripts]
+wireguard-tunnel-service = "wireguard_tunnel_service.main:main"
+wireguard-tunnel-ui = "wireguard_tunnel_service.ui_app:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.18.2",
+    "pyinstaller>=6.16.0",
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.13.2",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wireguard_tunnel_service"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+exclude = ["tests/integration"]
+
+[[tool.mypy.overrides]]
+module = ["PySide6", "PySide6.*"]
+ignore_missing_imports = true
