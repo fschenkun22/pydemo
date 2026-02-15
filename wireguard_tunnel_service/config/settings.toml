@@ -9,7 +9,7 @@ enable_ping_check = true
 [monitor]
 check_interval_sec = 15
 max_retries = 2
-retry_interval_sec = 10
+retry_interval_sec = 60
 cooldown_sec = 300
 probe_failures_before_disconnect = 1
 
