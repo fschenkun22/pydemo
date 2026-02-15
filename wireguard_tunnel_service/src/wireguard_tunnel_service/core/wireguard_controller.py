@@ -25,13 +25,57 @@ class WireGuardController:
     def __init__(self, tunnel_name: str, service_name: str | None = None) -> None:
         self.tunnel_name = tunnel_name
         self.service_name = service_name or f"WireGuardTunnel${tunnel_name}"
+        self._wg_executable = self._resolve_wg_executable()
         self._wireguard_executable = self._resolve_wireguard_executable()
         self._last_service_error: ControllerError | None = None
+        self._last_transfer_error: ControllerError | None = None
         self._last_reconnect_error: ControllerError | None = None
 
     def is_service_running(self) -> bool:
         state = self._query_service_state()
         return state == STATE_RUNNING
+
+    def transfer_bytes(self, timeout_sec: int = 15) -> tuple[int, int] | None:
+        result, run_error = self._run_command_safe(
+            [self._wg_executable, "show", self.tunnel_name, "transfer"],
+            context="transfer_query",
+            timeout_sec=timeout_sec,
+        )
+        if run_error is not None:
+            self._last_transfer_error = run_error
+            return None
+        assert result is not None
+        if result.returncode != 0:
+            self._last_transfer_error = ControllerError(
+                code="transfer_query_failed",
+                detail=self._render_command_failure(result),
+            )
+            return None
+
+        total_rx = 0
+        total_tx = 0
+        parsed = 0
+        for line in result.stdout.splitlines():
+            columns = line.strip().split()
+            if len(columns) < 3:
+                continue
+            rx_raw = columns[-2]
+            tx_raw = columns[-1]
+            if not rx_raw.isdigit() or not tx_raw.isdigit():
+                continue
+            total_rx += int(rx_raw)
+            total_tx += int(tx_raw)
+            parsed += 1
+
+        if parsed == 0:
+            self._last_transfer_error = ControllerError(
+                code="transfer_parse_failed",
+                detail="No parseable transfer counters in wg output.",
+            )
+            return None
+
+        self._last_transfer_error = None
+        return total_rx, total_tx
 
     def reconnect(self) -> bool:
         disconnected = self.disconnect()
@@ -130,6 +174,9 @@ class WireGuardController:
     def last_service_error(self) -> ControllerError | None:
         return self._last_service_error
 
+    def last_transfer_error(self) -> ControllerError | None:
+        return self._last_transfer_error
+
     def last_reconnect_error(self) -> ControllerError | None:
         return self._last_reconnect_error
 
@@ -165,6 +212,18 @@ class WireGuardController:
     @staticmethod
     def _list_directory(path: Path) -> list[Path]:
         return list(path.iterdir())
+
+    @staticmethod
+    def _resolve_wg_executable() -> str:
+        discovered = shutil.which("wg.exe") or shutil.which("wg")
+        if discovered:
+            return discovered
+
+        windows_default = Path(r"C:\Program Files\WireGuard\wg.exe")
+        if windows_default.exists():
+            return str(windows_default)
+
+        return "wg.exe"
 
     @staticmethod
     def _resolve_wireguard_executable() -> str:
@@ -305,9 +364,13 @@ class WireGuardController:
         self,
         command: list[str],
         context: str,
+        timeout_sec: int = 15,
     ) -> tuple[subprocess.CompletedProcess[str] | None, ControllerError | None]:
         try:
-            return self._run_command(command), None
+            try:
+                return self._run_command(command, timeout_sec=timeout_sec), None
+            except TypeError:
+                return self._run_command(command), None
         except FileNotFoundError as exc:
             return None, ControllerError(
                 code=f"{context}_command_not_found",
@@ -325,7 +388,10 @@ class WireGuardController:
             )
 
     @staticmethod
-    def _run_command(command: list[str]) -> subprocess.CompletedProcess[str]:
+    def _run_command(
+        command: list[str],
+        timeout_sec: int = 15,
+    ) -> subprocess.CompletedProcess[str]:
         creationflags = 0
         if os.name == "nt":
             creationflags = subprocess.CREATE_NO_WINDOW
@@ -334,7 +400,7 @@ class WireGuardController:
             capture_output=True,
             text=False,
             check=False,
-            timeout=15,
+            timeout=timeout_sec,
             creationflags=creationflags,
         )
         return subprocess.CompletedProcess(

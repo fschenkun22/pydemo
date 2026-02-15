@@ -17,3 +17,5 @@ class HealthSnapshot:
     checked_at: datetime
     reason: str
     reason_detail: str | None = None
+    rx_bytes: int | None = None
+    tx_bytes: int | None = None

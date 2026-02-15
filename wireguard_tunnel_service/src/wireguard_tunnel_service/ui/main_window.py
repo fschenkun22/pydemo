@@ -39,7 +39,8 @@ class MainWindow(QMainWindow):
         available_tunnels: list[str],
         on_settings_updated: Callable[[AppSettings], None],
         on_refresh_tunnels: Callable[[], list[str]],
-        on_status_changed: Callable[[str, str], None] | None = None,
+        on_tunnel_selected: Callable[[str], None] | None = None,
+        on_status_changed: Callable[[str, str, int | None, int | None], None] | None = None,
     ) -> None:
         super().__init__()
         self._settings = settings
@@ -48,9 +49,12 @@ class MainWindow(QMainWindow):
         self._tray_enabled = False
         self._on_settings_updated = on_settings_updated
         self._on_refresh_tunnels = on_refresh_tunnels
+        self._on_tunnel_selected = on_tunnel_selected
         self._on_status_changed = on_status_changed
         self._current_status = "unknown"
         self._current_reason = "-"
+        self._current_rx_bytes: int | None = None
+        self._current_tx_bytes: int | None = None
 
         self.setWindowTitle("WireGuard Tunnel Service")
         self.resize(980, 720)
@@ -70,6 +74,11 @@ class MainWindow(QMainWindow):
         self._refresh_timer.setInterval(2000)
         self._refresh_timer.timeout.connect(self.refresh_view)
         self._refresh_timer.start()
+
+        self._traffic_timer = QTimer(self)
+        self._traffic_timer.setInterval(500)
+        self._traffic_timer.timeout.connect(self._poll_transfer_counters)
+        self._traffic_timer.start()
         self.refresh_view()
 
     def set_tray_enabled(self, enabled: bool) -> None:
@@ -79,8 +88,13 @@ class MainWindow(QMainWindow):
         self._allow_close = True
         self.close()
 
-    def current_status_snapshot(self) -> tuple[str, str]:
-        return self._current_status, self._current_reason
+    def current_status_snapshot(self) -> tuple[str, str, int | None, int | None]:
+        return (
+            self._current_status,
+            self._current_reason,
+            self._current_rx_bytes,
+            self._current_tx_bytes,
+        )
 
     def refresh_view(self) -> None:
         events = self._state_store.list_events(limit=200)
@@ -91,11 +105,13 @@ class MainWindow(QMainWindow):
         checker = self._new_checker()
         snapshot = checker.check_once()
         detail = _sanitize_value(snapshot.reason_detail)
+        rx_raw = str(snapshot.rx_bytes) if snapshot.rx_bytes is not None else "-"
+        tx_raw = str(snapshot.tx_bytes) if snapshot.tx_bytes is not None else "-"
         self._state_store.append_event(
             "manual_health_check",
             (
                 f"status={snapshot.status.value};reason={snapshot.reason}"
-                f";detail={detail}"
+                f";detail={detail};rx_bytes={rx_raw};tx_bytes={tx_raw}"
             ),
         )
         self.refresh_view()
@@ -195,6 +211,7 @@ class MainWindow(QMainWindow):
             max_retries=self._max_retries_spin.value(),
             retry_interval_sec=self._retry_interval_spin.value(),
             cooldown_sec=self._cooldown_spin.value(),
+            probe_failures_before_disconnect=self._probe_failures_spin.value(),
         )
         new_settings = replace(
             self._settings,
@@ -212,7 +229,9 @@ class MainWindow(QMainWindow):
             "config_updated",
             (
                 f"tunnel_name={new_settings.wireguard.tunnel_name};"
-                f"healthcheck_url={_sanitize_value(new_settings.wireguard.healthcheck_url)}"
+                f"healthcheck_url={_sanitize_value(new_settings.wireguard.healthcheck_url)};"
+                f"probe_failures_before_disconnect="
+                f"{new_settings.monitor.probe_failures_before_disconnect}"
             ),
         )
         self.refresh_view()
@@ -247,21 +266,30 @@ class MainWindow(QMainWindow):
         event.accept()
 
     def _build_status_group(self) -> QGroupBox:
+        self._tunnel_label = QLabel("-")
         self._status_label = QLabel("unknown")
         self._reason_label = QLabel("-")
         self._detail_label = QLabel("-")
+        self._rx_label = QLabel("-")
+        self._tx_label = QLabel("-")
         self._last_check_label = QLabel("-")
 
         group = QGroupBox("Current Status")
         layout = QGridLayout(group)
-        layout.addWidget(QLabel("Status"), 0, 0)
-        layout.addWidget(self._status_label, 0, 1)
-        layout.addWidget(QLabel("Reason"), 1, 0)
-        layout.addWidget(self._reason_label, 1, 1)
-        layout.addWidget(QLabel("Detail"), 2, 0)
-        layout.addWidget(self._detail_label, 2, 1)
-        layout.addWidget(QLabel("Last Check"), 3, 0)
-        layout.addWidget(self._last_check_label, 3, 1)
+        layout.addWidget(QLabel("Tunnel"), 0, 0)
+        layout.addWidget(self._tunnel_label, 0, 1)
+        layout.addWidget(QLabel("Status"), 1, 0)
+        layout.addWidget(self._status_label, 1, 1)
+        layout.addWidget(QLabel("Reason"), 2, 0)
+        layout.addWidget(self._reason_label, 2, 1)
+        layout.addWidget(QLabel("Detail"), 3, 0)
+        layout.addWidget(self._detail_label, 3, 1)
+        layout.addWidget(QLabel("Received"), 4, 0)
+        layout.addWidget(self._rx_label, 4, 1)
+        layout.addWidget(QLabel("Sent"), 5, 0)
+        layout.addWidget(self._tx_label, 5, 1)
+        layout.addWidget(QLabel("Last Check"), 6, 0)
+        layout.addWidget(self._last_check_label, 6, 1)
         return group
 
     def _build_config_group(self) -> QGroupBox:
@@ -272,6 +300,7 @@ class MainWindow(QMainWindow):
         self._tunnel_combo.setEditable(True)
         self._tunnel_combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
         self._tunnel_combo.setPlaceholderText("Select or type tunnel name, e.g. shenyang231")
+        self._tunnel_combo.currentTextChanged.connect(self._remember_tunnel_selection)
         refresh_btn = QPushButton("Refresh Tunnels")
         refresh_btn.clicked.connect(self.refresh_tunnels)
 
@@ -283,6 +312,7 @@ class MainWindow(QMainWindow):
         self._max_retries_spin = _new_spinbox(1, 20)
         self._retry_interval_spin = _new_spinbox(1, 600)
         self._cooldown_spin = _new_spinbox(0, 3600)
+        self._probe_failures_spin = _new_spinbox(1, 20)
 
         apply_btn = QPushButton("Apply Config")
         apply_btn.clicked.connect(self.apply_settings)
@@ -309,7 +339,10 @@ class MainWindow(QMainWindow):
         layout.addWidget(QLabel("Cooldown (s)"), 4, 2)
         layout.addWidget(self._cooldown_spin, 4, 3)
 
-        layout.addWidget(apply_btn, 5, 3)
+        layout.addWidget(QLabel("Probe Failures Before Disconnect"), 5, 0)
+        layout.addWidget(self._probe_failures_spin, 5, 1)
+
+        layout.addWidget(apply_btn, 6, 3)
         return group
 
     def _build_action_bar(self) -> QHBoxLayout:
@@ -353,6 +386,8 @@ class MainWindow(QMainWindow):
         status_reason = "-"
         status_detail = "-"
         status_value = "unknown"
+        event_rx_bytes: int | None = None
+        event_tx_bytes: int | None = None
         last_time = "-"
 
         for event in events:
@@ -362,17 +397,61 @@ class MainWindow(QMainWindow):
             status_value = payload.get("status", status_value)
             status_reason = payload.get("reason", status_reason)
             status_detail = payload.get("detail", status_detail)
+            event_rx_bytes = _parse_optional_int(payload.get("rx_bytes"))
+            event_tx_bytes = _parse_optional_int(payload.get("tx_bytes"))
             last_time = event.occurred_at
             break
+
+        if status_value == "disconnected":
+            self._current_rx_bytes = None
+            self._current_tx_bytes = None
+        else:
+            if self._current_rx_bytes is None and event_rx_bytes is not None:
+                self._current_rx_bytes = event_rx_bytes
+            if self._current_tx_bytes is None and event_tx_bytes is not None:
+                self._current_tx_bytes = event_tx_bytes
 
         self._status_label.setText(status_value)
         self._reason_label.setText(status_reason)
         self._detail_label.setText(status_detail)
+        self._rx_label.setText(_format_traffic_value(self._current_rx_bytes))
+        self._tx_label.setText(_format_traffic_value(self._current_tx_bytes))
         self._last_check_label.setText(last_time)
+        self._tunnel_label.setText(self._settings.wireguard.tunnel_name or "-")
         self._current_status = status_value
         self._current_reason = status_reason
         if self._on_status_changed is not None:
-            self._on_status_changed(status_value, status_reason)
+            self._on_status_changed(
+                status_value,
+                status_reason,
+                self._current_rx_bytes,
+                self._current_tx_bytes,
+            )
+
+    def _poll_transfer_counters(self) -> None:
+        tunnel_name = (
+            self._tunnel_combo.currentText().strip() or self._settings.wireguard.tunnel_name
+        )
+        if not tunnel_name:
+            return
+
+        controller = self._new_controller()
+        transfer = controller.transfer_bytes(timeout_sec=1)
+        if transfer is None:
+            return
+
+        rx_bytes, tx_bytes = transfer
+        self._current_rx_bytes = rx_bytes
+        self._current_tx_bytes = tx_bytes
+        self._rx_label.setText(_format_traffic_value(rx_bytes))
+        self._tx_label.setText(_format_traffic_value(tx_bytes))
+        if self._on_status_changed is not None:
+            self._on_status_changed(
+                self._current_status,
+                self._current_reason,
+                rx_bytes,
+                tx_bytes,
+            )
 
     def _load_form_from_settings(self) -> None:
         self._url_edit.setText(self._settings.wireguard.healthcheck_url)
@@ -381,6 +460,7 @@ class MainWindow(QMainWindow):
         self._max_retries_spin.setValue(self._settings.monitor.max_retries)
         self._retry_interval_spin.setValue(self._settings.monitor.retry_interval_sec)
         self._cooldown_spin.setValue(self._settings.monitor.cooldown_sec)
+        self._probe_failures_spin.setValue(self._settings.monitor.probe_failures_before_disconnect)
 
     def _set_tunnels(self, tunnels: list[str]) -> None:
         current = self._tunnel_combo.currentText().strip() or self._settings.wireguard.tunnel_name
@@ -413,6 +493,19 @@ class MainWindow(QMainWindow):
             service_name=None,
         )
 
+    def _remember_tunnel_selection(self, text: str) -> None:
+        tunnel_name = text.strip()
+        if not tunnel_name:
+            return
+        if tunnel_name == self._settings.wireguard.tunnel_name:
+            return
+        self._settings = replace(
+            self._settings,
+            wireguard=replace(self._settings.wireguard, tunnel_name=tunnel_name),
+        )
+        if self._on_tunnel_selected is not None:
+            self._on_tunnel_selected(tunnel_name)
+
 
 def _parse_payload(raw: str) -> dict[str, str]:
     parsed: dict[str, str] = {}
@@ -434,3 +527,39 @@ def _sanitize_value(value: str | None) -> str:
     if not value:
         return "-"
     return value.replace(";", ",").replace("\n", " ")
+
+
+def _format_traffic_bytes(raw: str | None) -> str:
+    if raw is None:
+        return "-"
+    value = raw.strip()
+    if not value or value == "-":
+        return "-"
+    if not value.isdigit():
+        return value
+
+    amount = int(value)
+    units = ("B", "KiB", "MiB", "GiB", "TiB")
+    index = 0
+    display = float(amount)
+    while display >= 1024 and index < len(units) - 1:
+        display /= 1024
+        index += 1
+    if index == 0:
+        return f"{int(display)} {units[index]}"
+    return f"{display:.2f} {units[index]}"
+
+
+def _format_traffic_value(value: int | None) -> str:
+    if value is None:
+        return "-"
+    return _format_traffic_bytes(str(value))
+
+
+def _parse_optional_int(raw: str | None) -> int | None:
+    if raw is None:
+        return None
+    value = raw.strip()
+    if not value or value == "-" or not value.isdigit():
+        return None
+    return int(value)

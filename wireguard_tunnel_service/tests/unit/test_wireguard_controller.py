@@ -36,6 +36,40 @@ def test_is_service_running_returns_true_for_running_state(monkeypatch) -> None:
     assert controller.is_service_running()
 
 
+def test_transfer_bytes_parses_rx_tx(monkeypatch) -> None:
+    controller = WireGuardController(tunnel_name="wg0")
+    monkeypatch.setattr(
+        controller,
+        "_run_command",
+        lambda command: _completed(
+            0,
+            "\n".join(
+                [
+                    "peer-a\t100\t200",
+                    "peer-b\t300\t400",
+                ],
+            ),
+        ),
+    )
+
+    transfer = controller.transfer_bytes()
+    assert transfer == (400, 600)
+
+
+def test_transfer_bytes_sets_error_when_wg_not_found(monkeypatch) -> None:
+    controller = WireGuardController(tunnel_name="wg0")
+    monkeypatch.setattr(
+        controller,
+        "_run_command",
+        lambda command: (_ for _ in ()).throw(FileNotFoundError("wg.exe missing")),
+    )
+
+    assert controller.transfer_bytes() is None
+    error = controller.last_transfer_error()
+    assert error is not None
+    assert error.code == "transfer_query_command_not_found"
+
+
 def test_reconnect_starts_service_when_already_stopped(monkeypatch) -> None:
     controller = WireGuardController(tunnel_name="wg0")
     monkeypatch.setattr(controller, "_query_service_state", lambda: STATE_STOPPED)

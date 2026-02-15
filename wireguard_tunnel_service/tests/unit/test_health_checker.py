@@ -11,12 +11,16 @@ from wireguard_tunnel_service.core.wireguard_controller import ControllerError
 class FakeController:
     service_running: bool
     service_error: ControllerError | None = None
+    transfer: tuple[int, int] | None = None
 
     def is_service_running(self) -> bool:
         return self.service_running
 
     def last_service_error(self) -> ControllerError | None:
         return self.service_error
+
+    def transfer_bytes(self) -> tuple[int, int] | None:
+        return self.transfer
 
 
 def test_health_checker_marks_disconnected_when_service_not_running() -> None:
@@ -49,7 +53,7 @@ def test_health_checker_marks_disconnected_when_url_probe_failed(monkeypatch) ->
 
 
 def test_health_checker_marks_healthy_when_all_checks_pass(monkeypatch) -> None:
-    controller = FakeController(service_running=True)
+    controller = FakeController(service_running=True, transfer=(1024, 2048))
     checker = HealthChecker(
         controller,
         healthcheck_url="https://example.com",
@@ -64,6 +68,8 @@ def test_health_checker_marks_healthy_when_all_checks_pass(monkeypatch) -> None:
     snapshot = checker.check_once()
     assert snapshot.status is TunnelStatus.HEALTHY
     assert snapshot.reason == "ok"
+    assert snapshot.rx_bytes == 1024
+    assert snapshot.tx_bytes == 2048
 
 
 def test_probe_connectivity_returns_disabled_when_url_empty() -> None:

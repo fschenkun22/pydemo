@@ -31,6 +31,10 @@ class HealthChecker:
                 reason_detail=service_error.detail if service_error is not None else None,
             )
 
+        transfer = self._controller.transfer_bytes()
+        rx_bytes = transfer[0] if transfer is not None else None
+        tx_bytes = transfer[1] if transfer is not None else None
+
         if self._healthcheck_url and not skip_connectivity_probe:
             probe_ok, detail = self.probe_connectivity()
             if not probe_ok:
@@ -39,12 +43,16 @@ class HealthChecker:
                     checked_at=now,
                     reason="url_probe_failed",
                     reason_detail=detail,
+                    rx_bytes=rx_bytes,
+                    tx_bytes=tx_bytes,
                 )
 
         return HealthSnapshot(
             status=TunnelStatus.HEALTHY,
             checked_at=now,
             reason="ok",
+            rx_bytes=rx_bytes,
+            tx_bytes=tx_bytes,
         )
 
     @staticmethod

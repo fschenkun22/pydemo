@@ -72,18 +72,22 @@ class MonitorService:
 
             snapshot = self._checker.check_once(skip_connectivity_probe=True)
             reason_detail = self._sanitize_reason(snapshot.reason_detail)
+            rx_raw = str(snapshot.rx_bytes) if snapshot.rx_bytes is not None else "-"
+            tx_raw = str(snapshot.tx_bytes) if snapshot.tx_bytes is not None else "-"
             self._state_store.append_event(
                 "health_check",
                 (
                     f"status={snapshot.status.value};reason={snapshot.reason}"
-                    f";detail={reason_detail}"
+                    f";detail={reason_detail};rx_bytes={rx_raw};tx_bytes={tx_raw}"
                 ),
             )
             self._logger.info(
-                "health_check status=%s reason=%s detail=%s",
+                "health_check status=%s reason=%s detail=%s rx_bytes=%s tx_bytes=%s",
                 snapshot.status.value,
                 snapshot.reason,
                 snapshot.reason_detail,
+                rx_raw,
+                tx_raw,
             )
 
             if snapshot.status is not TunnelStatus.HEALTHY:

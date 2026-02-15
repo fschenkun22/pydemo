@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import threading
 
 from PySide6.QtCore import QThread
@@ -36,4 +37,7 @@ class MonitorWorker(QThread):
         self._stop_event.set()
 
     def run(self) -> None:  # noqa: D401
-        self._monitor.run(stop_event=self._stop_event)
+        try:
+            self._monitor.run(stop_event=self._stop_event)
+        except Exception:  # noqa: BLE001
+            logging.getLogger(__name__).exception("Monitor worker crashed unexpectedly.")
