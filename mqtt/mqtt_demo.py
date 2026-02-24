@@ -11,7 +11,7 @@ def send_mqtt():
     mqttc.on_publish = on_publish
     mqttc.username_pw_set("homeassistant", "OoQu6pheeyaifohZieK2nat0maigei3ziraco9na2Eeghoolia3geec3Tohvot5a")
     try:
-        mqttc.connect("fd1c:33c1:ced0:7eb7:fb99:93df:a5c4:c5a1", 1883, 60)
+        mqttc.connect("10.0.0.116", 1883, 60)
     except Exception as e:
         print("MQTT连接失败")
         print(e)
